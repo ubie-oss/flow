@@ -5,8 +5,6 @@ import (
 	"os"
 )
 
-// repo = res.source.repoSource.repoName
-// app_name = repo.replace('github-ubie-inc-', '')
 func (f *Flow) process(e Event) error {
 	if e.RepoName != cfg.ManifestName {
 		f.createPR()
