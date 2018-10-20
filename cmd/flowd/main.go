@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var server *flow.Flow
+var f *flow.Flow
 
 func main() {
 
@@ -29,13 +29,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
-
-	server, err = flow.New(ctx, cfg)
+	f, err = flow.New(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "flow init error:%v.\n", err)
 		os.Exit(1)
 	}
 
-	server.Start()
+	errCh := make(chan error, 1)
+	ctx := context.TODO()
+	f.Start(ctx, errCh)
+	err = <-errCh
+	f.Stop(ctx)
 }
