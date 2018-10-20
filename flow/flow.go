@@ -69,6 +69,4 @@ func (f *Flow) Start(ctx context.Context, errCh chan error) {
 	}
 
 	go f.subscribe(ctx, errCh)
-
-	// time.Sleep(10000 * time.Second)
 }
