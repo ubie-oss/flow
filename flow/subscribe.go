@@ -16,10 +16,6 @@ var (
 	killCh  chan bool
 )
 
-type event struct {
-	repo string
-}
-
 func (f *Flow) subscribe(ctx context.Context, errCh chan error) {
 	killCh := make(chan bool, 2)
 
@@ -35,7 +31,7 @@ func (f *Flow) subscribe(ctx context.Context, errCh chan error) {
 		}
 
 		err := subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-			var e event
+			var e Event
 
 			if err := json.Unmarshal(msg.Data, &e); err != nil {
 				fmt.Fprintf(os.Stderr, "Error: could not decode message data: %#v", msg)

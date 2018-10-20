@@ -7,8 +7,8 @@ import (
 
 // repo = res.source.repoSource.repoName
 // app_name = repo.replace('github-ubie-inc-', '')
-func (f *Flow) process(e event) error {
-	if e.repo != cfg.ManifestName {
+func (f *Flow) process(e Event) error {
+	if e.RepoName != cfg.ManifestName {
 		f.createPR()
 		f.notifyBuild()
 	} else {
