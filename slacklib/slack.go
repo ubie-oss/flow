@@ -1,6 +1,7 @@
 package slacklib
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -35,41 +36,58 @@ func NewSlackMessage(apiKey, channel string, d MessageDetail) *slackMessage {
 func (s *slackMessage) Post() error {
 	api := slack.New(s.apiKey)
 
-	title := s.AppName
+	var title, color string
 
 	if s.IsPrNotify {
-		title += " Build"
+		title += "Build"
 	} else {
-		title += " Deploy"
+		title += "Deploy"
 	}
 
-	color := colorSuccess
-	if !s.IsSuccess {
+	if s.IsSuccess {
+		color = colorSuccess
+		title += " Success"
+	} else {
 		color = colorDanger
+		title += " Failure"
 	}
+
+	fields := []slack.AttachmentField{}
+
+	fields = append(fields, slack.AttachmentField{
+		Title: "App",
+		Value: s.AppName,
+		Short: false,
+	})
+
+	if len(s.Images) > 0 {
+		fields = append(fields, slack.AttachmentField{
+			Title: "Images",
+			Value: "```\n" + strings.Join(s.Images, "\n") + "\n```",
+			Short: false,
+		})
+	}
+
+	if s.PrURL != "" {
+		fields = append(fields, slack.AttachmentField{
+			Title: "Deploy Pull Request",
+			Value: fmt.Sprintf("Merge this PullRequest for Production Relase\n```\n%s\n```", s.PrURL),
+			Short: false,
+		})
+	}
+
+	fields = append(fields, slack.AttachmentField{
+		Title: "Logs",
+		Value: fmt.Sprintf("<%s|BuildLog>", s.LogURL),
+		Short: false,
+	})
 
 	params := slack.PostMessageParameters{
 		Attachments: []slack.Attachment{
 			slack.Attachment{
-				Color: color,
-				Title: title,
-				Fields: []slack.AttachmentField{
-					slack.AttachmentField{
-						Title: "Images",
-						Value: "```\n" + strings.Join(s.Images, "\n") + "\n```",
-						Short: false,
-					},
-					slack.AttachmentField{
-						Title: "Deploy Pull Request",
-						Value: "Merge this PullRequest for Production Relase\n" + s.PrURL,
-						Short: false,
-					},
-					slack.AttachmentField{
-						Title: "Logs",
-						Value: s.LogURL,
-						Short: false,
-					},
-				},
+				Color:  color,
+				Title:  title,
+				Fields: fields,
 			},
 		},
 		Markdown:  true,

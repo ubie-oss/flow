@@ -37,6 +37,7 @@ type Artifacts struct {
 }
 
 func (e Event) isFinished() bool {
+	// @todo better to handle with Status: QUEUED, WORKING, SUCCESS, FAILURE
 	return (e.FinishTime != nil)
 }
 
@@ -50,5 +51,5 @@ func (e Event) isApplicationBuild() bool {
 
 func (e Event) getAppName() string {
 	// @todo trim organization
-	return strings.Replace(e.RepoName, "github-com", "", 1)
+	return strings.Replace(e.RepoName, "github-", "", 1)
 }
