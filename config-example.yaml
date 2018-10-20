@@ -1,0 +1,17 @@
+manifest_owner: sakajunquality
+manifest_name: example-deployment
+
+applications:
+  - name: example
+    source_owner: sakajunquality
+    source_name: example-app
+    image_tag: gcr.io/$PROJECT_ID/hoge
+    manifests:
+      - overlays/staging/deployment.yaml
+      - overlays/production/deployment.yaml
+
+git_author:
+  name: sakajunquality
+  email: test@sakajunquality.dev
+
+slack_notify_channel: "#deploy"
