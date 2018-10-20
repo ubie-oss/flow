@@ -2,6 +2,10 @@ package flow
 
 import "time"
 
+const (
+	statusSuccess = "SUCCESS"
+)
+
 // Event is Cloud Build events published to Cloud Pub/Sub
 type Event struct {
 	ID         string    `json:"id"`
@@ -22,4 +26,12 @@ type EventSource struct {
 type EventRepo struct {
 	RepoName string `json:"repoName"`
 	TagName  string `json:"tagName"`
+}
+
+func (e Event) isSuuccess() bool {
+	return (e.Status == statusSuccess)
+}
+
+func (e Event) isApplicationBuild() bool {
+	return (e.RepoName != cfg.ManifestName)
 }
