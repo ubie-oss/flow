@@ -14,7 +14,9 @@ type Application struct {
 	Name        string   `yaml:"name"`
 	SourceOwner string   `yaml:"source_owner"`
 	SourceName  string   `yaml:"source_name"`
-	ImageTag    string   `yaml:"image_tag"`
+	BaseBranch  string   `yaml:"base_branch_name"`
+	Env         string   `yaml:"env"`
+	ImageName   string   `yaml:"image_tag"`
 	Manifests   []string `yaml:"manifests"`
 }
 

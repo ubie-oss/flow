@@ -1,12 +1,16 @@
 package flow
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/sakajunquality/flow/gitbot"
 	"github.com/sakajunquality/flow/slacklib"
 )
 
-func (f *Flow) process(e Event) error {
+func (f *Flow) process(ctx context.Context, e Event) error {
 	if !e.isFinished() { // Notify only the finished
 		return nil
 	}
@@ -34,10 +38,30 @@ func (f *Flow) process(e Event) error {
 }
 
 func (f *Flow) createRelasePR(e Event) (string, error) {
+	ctx := context.Background()
 
-	// @todo Create PulRequest here
+	app := getApplicationByRepoName(e.RepoName)
+	repo := gitbot.NewRepo(app.SourceOwner, app.SourceName, app.BaseBranch)
+	version, err := getVersionFromImage(e.Images)
+	if err != nil {
+		return "", err
+	}
 
-	return "https://github.com/xxx/yyy/pulls/zzz", nil
+	release := gitbot.NewRelease(*repo, app.Env, version)
+
+	for _, filePath := range app.Manifests {
+		release.AddChanges(filePath, fmt.Sprintf("%s:.*", app.ImageName), fmt.Sprintf("%s:%s", app.ImageName, version))
+	}
+
+	// Add Commit Author
+	release.AddAuthor(cfg.GitAuthor.Name, cfg.GitAuthor.Email)
+
+	// Create a release PullRequest
+	prURL, err := release.Create(ctx, f.githubToken)
+	if err != nil {
+		return "", err
+	}
+	return *prURL, nil
 }
 
 func (f *Flow) notifyRelasePR(e Event, prURL string) error {
@@ -75,4 +99,17 @@ func (f *Flow) notifyFalure(e Event, errorMessage string) error {
 	}
 
 	return slacklib.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
+}
+
+func getApplicationByRepoName(repoName string) *Application {
+	return nil
+}
+
+func getVersionFromImage(images []string) (string, error) {
+	if len(images) < 1 {
+		return "", errors.New("no images found")
+	}
+	// does not support multiple images
+	tags := strings.Split(images[0], ":")
+	return tags[1], nil
 }

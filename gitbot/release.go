@@ -3,6 +3,7 @@ package gitbot
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/google/go-github/v18/github"
 	"golang.org/x/oauth2"
@@ -39,24 +40,46 @@ type Change struct {
 	changedText string
 }
 
-const (
-	baseBranch = "master"
-)
-
 var client *github.Client
 
+func NewRepo(sourceOwner, sourceRepo, baseBranch string) *Repo {
+	return &Repo{
+		sourceOwner: sourceOwner,
+		sourceRepo:  sourceRepo,
+		baseBranch:  baseBranch,
+	}
+}
+
 // NewRelease is ...
-func NewRelease() *Release {
-	return &Release{}
+func NewRelease(repo Repo, appEnv, appVersion string) *Release {
+	branch := fmt.Sprintf("release/%s-%s-%s", repo.sourceRepo, appEnv, appVersion)
+	subject := fmt.Sprintf("Release %s %s %s", repo.sourceRepo, appEnv, appVersion)
+
+	return &Release{
+		Repo: repo,
+		PullRequest: PullRequest{
+			commitBranch:  branch,
+			commitMessage: subject,
+			prTitle:       subject,
+		},
+	}
 }
 
-func (r *Release) AddChanges() {
-
+func (r *Release) AddAuthor(authorName, authorEmail string) {
+	r.Author.authorName = authorName
+	r.Author.authorEmail = authorEmail
 }
 
-func (r *Release) Create(ctx context.Context) (*string, error) {
-	token := "hogehoge"
+func (r *Release) AddChanges(filePath, regexText, changedText string) {
+	r.Changes = append(r.Changes, Change{
+		filePath:    filePath,
+		regexText:   regexText,
+		changedText: changedText,
+	})
+}
 
+func (r *Release) Create(ctx context.Context, token string) (*string, error) {
+	r.ctx = ctx
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(ctx, ts)
 	client = github.NewClient(tc)
