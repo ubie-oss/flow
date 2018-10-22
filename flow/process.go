@@ -18,7 +18,7 @@ func (f *Flow) process(ctx context.Context, e Event) error {
 	if e.isSuuccess() { // Cloud Build Success
 
 		if e.isApplicationBuild() { // Build for Application
-			prURL, err := f.createRelasePR(e)
+			prURL, err := f.createRelasePR(ctx, e)
 			if err != nil {
 				f.notifyFalure(e, err.Error())
 				return err
@@ -32,14 +32,9 @@ func (f *Flow) process(ctx context.Context, e Event) error {
 
 	// Code Build Failure
 	return f.notifyFalure(e, "")
-
-	fmt.Println("notify failure\n%#v\n", e)
-	return nil
 }
 
-func (f *Flow) createRelasePR(e Event) (string, error) {
-	ctx := context.Background()
-
+func (f *Flow) createRelasePR(ctx context.Context, e Event) (string, error) {
 	app := getApplicationByRepoName(e.RepoName)
 	repo := gitbot.NewRepo(app.SourceOwner, app.SourceName, app.BaseBranch)
 	version, err := getVersionFromImage(e.Images)

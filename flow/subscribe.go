@@ -42,7 +42,7 @@ func (f *Flow) subscribe(ctx context.Context, errCh chan error) {
 			fmt.Fprintf(os.Stdout, "Processing event: %#v\n", e)
 
 			countMu.Lock()
-			if err := f.process(e); err != nil {
+			if err := f.process(ctx, e); err != nil {
 				fmt.Fprintf(os.Stderr, "Error: cloud not process event: %s\n", err)
 
 				msg.Nack()
