@@ -35,7 +35,11 @@ func (f *Flow) process(ctx context.Context, e Event) error {
 }
 
 func (f *Flow) createRelasePR(ctx context.Context, e Event) (string, error) {
-	app := getApplicationByRepoName(e.RepoName)
+	app, err := getApplicationByEventRepoName(e.RepoName)
+	if err != nil {
+		return "", err
+	}
+
 	repo := gitbot.NewRepo(app.SourceOwner, app.SourceName, app.BaseBranch)
 	version, err := getVersionFromImage(e.Images)
 	if err != nil {
@@ -96,8 +100,14 @@ func (f *Flow) notifyFalure(e Event, errorMessage string) error {
 	return slacklib.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
 }
 
-func getApplicationByRepoName(repoName string) *Application {
-	return nil
+func getApplicationByEventRepoName(eventRepoName string) (*Application, error) {
+	for _, app := range cfg.ApplicationList {
+		// CloudBuild Repo Names
+		if eventRepoName == fmt.Sprintf("github-%s-%s", app.SourceOwner, app.SourceName) {
+			return &app, nil
+		}
+	}
+	return nil, errors.New("No application found for " + eventRepoName)
 }
 
 func getVersionFromImage(images []string) (string, error) {
