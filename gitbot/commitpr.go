@@ -1,6 +1,7 @@
 package gitbot
 
 import (
+	"regexp"
 	"time"
 
 	"github.com/google/go-github/v18/github"
@@ -25,12 +26,12 @@ func (r *Release) getTree(ref *github.Reference) (tree *github.Tree, err error) 
 
 	// Load each file into the tree.
 	for _, c := range r.Changes {
-		content, err := r.getChangedContent(c)
+		content, err := r.getChangedContent(c, ref)
 		if err != nil {
 			return nil, err
 		}
 
-		entries = append(entries, github.TreeEntry{Path: github.String(c.file), Type: github.String("blob"), Content: github.String(string(content)), Mode: github.String("100644")})
+		entries = append(entries, github.TreeEntry{Path: github.String(c.filePath), Type: github.String("blob"), Content: github.String(content), Mode: github.String("100644")})
 	}
 
 	tree, _, err = client.Git.CreateTree(r.ctx, r.sourceOwner, r.sourceRepo, *ref.Object.SHA, entries)
@@ -75,11 +76,22 @@ func (r *Release) createPR() (*string, error) {
 	return github.String(pr.GetHTMLURL()), nil
 }
 
-func (r *Release) getChangedContent(c Change) ([]byte, error) {
-	// @todo get the latest content
+func (r *Release) getChangedContent(c Change, ref *github.Reference) (string, error) {
+	opt := &github.RepositoryContentGetOptions{
+		Ref: *ref.URL,
+	}
 
-	// @todo make changes
+	f, _, _, err := client.Repositories.GetContents(r.ctx, r.sourceOwner, r.sourceOwner, c.filePath, opt)
 
-	// @todo return bytes array and error
-	return nil, nil
+	if err != nil {
+		return "", err
+	}
+
+	original, err := f.GetContent()
+	if err != nil {
+		return "", err
+	}
+
+	re := regexp.MustCompile(c.regexText)
+	return re.ReplaceAllString(original, c.changedText), nil
 }

@@ -34,9 +34,9 @@ type Author struct {
 }
 
 type Change struct {
-	file          string
-	beforeReplace string
-	afterReplace  string
+	filePath    string
+	regexText   string
+	changedText string
 }
 
 const (
