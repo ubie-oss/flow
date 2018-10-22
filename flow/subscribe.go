@@ -45,7 +45,7 @@ func (f *Flow) subscribe(ctx context.Context, errCh chan error) {
 			if err := f.process(ctx, e); err != nil {
 				fmt.Fprintf(os.Stderr, "Error: cloud not process event: %s\n", err)
 
-				msg.Nack()
+				msg.Ack()
 				return
 			}
 			msg.Ack()

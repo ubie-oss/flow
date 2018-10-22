@@ -82,6 +82,14 @@ func (s *slackMessage) Post() error {
 		Short: false,
 	})
 
+	if s.ErrorMessage != "" {
+		fields = append(fields, slack.AttachmentField{
+			Title: "Errors",
+			Value: fmt.Sprintf("%s", s.ErrorMessage),
+			Short: false,
+		})
+	}
+
 	params := slack.PostMessageParameters{
 		Attachments: []slack.Attachment{
 			slack.Attachment{

@@ -78,10 +78,11 @@ func (r *Release) createPR() (*string, error) {
 
 func (r *Release) getChangedContent(c Change, ref *github.Reference) (string, error) {
 	opt := &github.RepositoryContentGetOptions{
-		Ref: *ref.URL,
+		// Ref: *ref.URL,
+		Ref: "master",
 	}
 
-	f, _, _, err := client.Repositories.GetContents(r.ctx, r.sourceOwner, r.sourceOwner, c.filePath, opt)
+	f, _, _, err := client.Repositories.GetContents(r.ctx, r.sourceOwner, r.sourceRepo, c.filePath, opt)
 
 	if err != nil {
 		return "", err

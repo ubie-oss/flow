@@ -51,9 +51,9 @@ func NewRepo(sourceOwner, sourceRepo, baseBranch string) *Repo {
 }
 
 // NewRelease is ...
-func NewRelease(repo Repo, appEnv, appVersion string) *Release {
-	branch := fmt.Sprintf("release/%s-%s-%s", repo.sourceRepo, appEnv, appVersion)
-	subject := fmt.Sprintf("Release %s %s %s", repo.sourceRepo, appEnv, appVersion)
+func NewRelease(repo Repo, appName, appEnv, appVersion string) *Release {
+	branch := fmt.Sprintf("release/%s-%s-%s", appName, appEnv, appVersion)
+	subject := fmt.Sprintf("Release %s %s %s", appName, appEnv, appVersion)
 
 	return &Release{
 		Repo: repo,
@@ -83,6 +83,8 @@ func (r *Release) Create(ctx context.Context, token string) (*string, error) {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(ctx, ts)
 	client = github.NewClient(tc)
+
+	fmt.Printf("%#v", r)
 
 	ref, err := r.getRef()
 	if err != nil {

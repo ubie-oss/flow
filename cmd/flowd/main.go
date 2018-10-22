@@ -35,6 +35,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Fprintf(os.Stdout, "flow started\n")
+
 	errCh := make(chan error, 1)
 	ctx := context.TODO()
 	f.Start(ctx, errCh)

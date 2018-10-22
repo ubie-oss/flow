@@ -1,8 +1,9 @@
 package flow
 
 type Config struct {
-	ManifestOwner string `yaml:"manifest_owner"`
-	ManifestName  string `yaml:"manifest_name"`
+	ManifestOwner      string `yaml:"manifest_owner"`
+	ManifestName       string `yaml:"manifest_name"`
+	ManifestBaseBranch string `yaml:"manifest_base_branch"`
 
 	ApplicationList []Application `yaml:"applications"`
 	GitAuthor       GitAuthor     `yaml:"git_author"`
@@ -14,7 +15,6 @@ type Application struct {
 	Name        string   `yaml:"name"`
 	SourceOwner string   `yaml:"source_owner"`
 	SourceName  string   `yaml:"source_name"`
-	BaseBranch  string   `yaml:"base_branch_name"`
 	Env         string   `yaml:"env"`
 	ImageName   string   `yaml:"image_tag"`
 	Manifests   []string `yaml:"manifests"`

@@ -40,13 +40,13 @@ func (f *Flow) createRelasePR(ctx context.Context, e Event) (string, error) {
 		return "", err
 	}
 
-	repo := gitbot.NewRepo(app.SourceOwner, app.SourceName, app.BaseBranch)
+	repo := gitbot.NewRepo(cfg.ManifestOwner, cfg.ManifestName, cfg.ManifestBaseBranch)
 	version, err := getVersionFromImage(e.Images)
 	if err != nil {
 		return "", err
 	}
 
-	release := gitbot.NewRelease(*repo, app.Env, version)
+	release := gitbot.NewRelease(*repo, app.Name, app.Env, version)
 
 	for _, filePath := range app.Manifests {
 		release.AddChanges(filePath, fmt.Sprintf("%s:.*", app.ImageName), fmt.Sprintf("%s:%s", app.ImageName, version))
