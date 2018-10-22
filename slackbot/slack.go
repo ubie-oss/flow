@@ -1,4 +1,4 @@
-package slacklib
+package slackbot
 
 import (
 	"fmt"

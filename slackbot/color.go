@@ -1,4 +1,4 @@
-package slacklib
+package slackbot
 
 const (
 	colorInfo    = "#3498db"

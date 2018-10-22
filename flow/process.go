@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/sakajunquality/flow/gitbot"
-	"github.com/sakajunquality/flow/slacklib"
+	"github.com/sakajunquality/flow/slackbot"
 )
 
 func (f *Flow) process(ctx context.Context, e Event) error {
@@ -64,7 +64,7 @@ func (f *Flow) createRelasePR(ctx context.Context, e Event) (string, error) {
 }
 
 func (f *Flow) notifyRelasePR(e Event, prURL string) error {
-	d := slacklib.MessageDetail{
+	d := slackbot.MessageDetail{
 		IsSuccess:  true,
 		IsPrNotify: true,
 		LogURL:     e.LogURL,
@@ -73,23 +73,23 @@ func (f *Flow) notifyRelasePR(e Event, prURL string) error {
 		PrURL:      prURL,
 	}
 
-	return slacklib.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
+	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
 
 }
 
 func (f *Flow) notifyDeploy(e Event) error {
-	d := slacklib.MessageDetail{
+	d := slackbot.MessageDetail{
 		IsSuccess:  true,
 		IsPrNotify: false,
 		LogURL:     e.LogURL,
 		AppName:    e.RepoName,
 	}
 
-	return slacklib.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
+	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
 }
 
 func (f *Flow) notifyFalure(e Event, errorMessage string) error {
-	d := slacklib.MessageDetail{
+	d := slackbot.MessageDetail{
 		IsSuccess:    false,
 		LogURL:       e.LogURL,
 		AppName:      e.RepoName,
@@ -97,7 +97,7 @@ func (f *Flow) notifyFalure(e Event, errorMessage string) error {
 		ErrorMessage: errorMessage,
 	}
 
-	return slacklib.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
+	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
 }
 
 func getApplicationByEventRepoName(eventRepoName string) (*Application, error) {
