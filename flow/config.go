@@ -12,12 +12,17 @@ type Config struct {
 }
 
 type Application struct {
-	Name        string   `yaml:"name"`
-	SourceOwner string   `yaml:"source_owner"`
-	SourceName  string   `yaml:"source_name"`
-	Env         string   `yaml:"env"`
-	ImageName   string   `yaml:"image_tag"`
-	Manifests   []string `yaml:"manifests"`
+	Name        string     `yaml:"name"`
+	SourceOwner string     `yaml:"source_owner"`
+	SourceName  string     `yaml:"source_name"`
+	Env         string     `yaml:"env"`
+	ImageName   string     `yaml:"image_tag"`
+	Manifests   []Manifest `yaml:"manifests"`
+}
+
+type Manifest struct {
+	Env   string   `yaml:"env"`
+	Files []string `yaml:"files"`
 }
 
 type GitAuthor struct {

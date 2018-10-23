@@ -11,6 +11,14 @@ import (
 	"github.com/sakajunquality/flow/slackbot"
 )
 
+type PullRequests []PullRequest
+
+type PullRequest struct {
+	env string
+	url string
+	err error
+}
+
 func (f *Flow) process(ctx context.Context, e Event) error {
 	if !e.isFinished() { // Notify only the finished
 		fmt.Fprintf(os.Stdout, "Build hasn't finished\n")
@@ -25,12 +33,29 @@ func (f *Flow) process(ctx context.Context, e Event) error {
 				return f.notifyOnlyBuildResult(e)
 			}
 
-			prURL, err := f.createRelasePR(ctx, e, *app)
+			var prs PullRequests
+
+			for _, manifest := range app.Manifests {
+				prURL, err := f.createRelasePR(ctx, e, *app, manifest)
+				if err != nil {
+					prs = append(prs, PullRequest{
+						env: manifest.Env,
+						err: err,
+					})
+					continue
+				}
+
+				prs = append(prs, PullRequest{
+					env: manifest.Env,
+					url: prURL,
+				})
+			}
+
 			if err != nil {
 				f.notifyFalure(e, err.Error())
 				return err
 			}
-			return f.notifyRelasePR(e, prURL)
+			return f.notifyRelasePR(e, prs)
 		}
 
 		// Build for Deployment
@@ -42,7 +67,7 @@ func (f *Flow) process(ctx context.Context, e Event) error {
 	return f.notifyFalure(e, "")
 }
 
-func (f *Flow) createRelasePR(ctx context.Context, e Event, a Application) (string, error) {
+func (f *Flow) createRelasePR(ctx context.Context, e Event, a Application, m Manifest) (string, error) {
 	repo := gitbot.NewRepo(cfg.ManifestOwner, cfg.ManifestName, cfg.ManifestBaseBranch)
 	version, err := getVersionFromImage(e.Images)
 	if err != nil {
@@ -51,7 +76,7 @@ func (f *Flow) createRelasePR(ctx context.Context, e Event, a Application) (stri
 
 	release := gitbot.NewRelease(*repo, a.Name, a.Env, version)
 
-	for _, filePath := range a.Manifests {
+	for _, filePath := range m.Files {
 		release.AddChanges(filePath, fmt.Sprintf("%s:.*", a.ImageName), fmt.Sprintf("%s:%s", a.ImageName, version))
 	}
 
@@ -80,7 +105,18 @@ func (f *Flow) notifyOnlyBuildResult(e Event) error {
 	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
 }
 
-func (f *Flow) notifyRelasePR(e Event, prURL string) error {
+func (f *Flow) notifyRelasePR(e Event, prs PullRequests) error {
+	var prURL string
+
+	for _, pr := range prs {
+		if pr.err != nil {
+			prURL += fmt.Sprintf("`%s`\n```%s```\n", pr.env, pr.err)
+			continue
+		}
+
+		prURL += fmt.Sprintf("`%s`\n```%s```\n", pr.env, pr.url)
+	}
+
 	d := slackbot.MessageDetail{
 		IsSuccess:  true,
 		IsPrNotify: true,
