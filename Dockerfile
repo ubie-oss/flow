@@ -9,5 +9,5 @@ RUN go get -d -v ./...
 RUN go build -o bin/flowd cmd/flowd/main.go
 
 FROM gcr.io/distroless/base
-COPY --from=build-env /go/src/app/bin/flowd /
-CMD ["/app"]
+COPY --from=build-env /go/src/app/bin/flowd /usr/local/bin
+CMD ["/usr/local/bin/flowd"]
