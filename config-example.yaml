@@ -7,8 +7,12 @@ applications:
     source_name: example-app
     image_tag: gcr.io/$PROJECT_ID/hoge
     manifests:
-      - overlays/staging/deployment.yaml
-      - overlays/production/deployment.yaml
+      - env: staging
+        files:
+          - overlays/staging/deployment.yaml
+      - env: production
+        files:
+          - overlays/production/deployment.yaml
 
 git_author:
   name: sakajunquality
