@@ -74,7 +74,7 @@ func (f *Flow) createRelasePR(ctx context.Context, e Event, a Application, m Man
 		return "", err
 	}
 
-	release := gitbot.NewRelease(*repo, a.Name, a.Env, version)
+	release := gitbot.NewRelease(*repo, a.Name, m.Env, version)
 
 	for _, filePath := range m.Files {
 		release.AddChanges(filePath, fmt.Sprintf("%s:.*", a.ImageName), fmt.Sprintf("%s:%s", a.ImageName, version))
