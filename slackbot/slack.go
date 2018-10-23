@@ -38,11 +38,7 @@ func (s *slackMessage) Post() error {
 
 	var title, color string
 
-	if s.IsPrNotify {
-		title += "Build"
-	} else {
-		title += "Deploy"
-	}
+	title = "Build"
 
 	if s.IsSuccess {
 		color = colorSuccess

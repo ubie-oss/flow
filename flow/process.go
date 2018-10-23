@@ -20,7 +20,12 @@ func (f *Flow) process(ctx context.Context, e Event) error {
 	if e.isSuuccess() { // Cloud Build Success
 
 		if e.isApplicationBuild() { // Build for Application
-			prURL, err := f.createRelasePR(ctx, e)
+			app, err := getApplicationByEventRepoName(e.RepoName)
+			if err != nil {
+				return f.notifyOnlyBuildResult(e)
+			}
+
+			prURL, err := f.createRelasePR(ctx, e, *app)
 			if err != nil {
 				f.notifyFalure(e, err.Error())
 				return err
@@ -29,29 +34,25 @@ func (f *Flow) process(ctx context.Context, e Event) error {
 		}
 
 		// Build for Deployment
-		return f.notifyDeploy(e)
+		// return f.notifyDeploy(e)
+		return nil
 	}
 
 	// Code Build Failure
 	return f.notifyFalure(e, "")
 }
 
-func (f *Flow) createRelasePR(ctx context.Context, e Event) (string, error) {
-	app, err := getApplicationByEventRepoName(e.RepoName)
-	if err != nil {
-		return "", err
-	}
-
+func (f *Flow) createRelasePR(ctx context.Context, e Event, a Application) (string, error) {
 	repo := gitbot.NewRepo(cfg.ManifestOwner, cfg.ManifestName, cfg.ManifestBaseBranch)
 	version, err := getVersionFromImage(e.Images)
 	if err != nil {
 		return "", err
 	}
 
-	release := gitbot.NewRelease(*repo, app.Name, app.Env, version)
+	release := gitbot.NewRelease(*repo, a.Name, a.Env, version)
 
-	for _, filePath := range app.Manifests {
-		release.AddChanges(filePath, fmt.Sprintf("%s:.*", app.ImageName), fmt.Sprintf("%s:%s", app.ImageName, version))
+	for _, filePath := range a.Manifests {
+		release.AddChanges(filePath, fmt.Sprintf("%s:.*", a.ImageName), fmt.Sprintf("%s:%s", a.ImageName, version))
 	}
 
 	// Add Commit Author
@@ -67,6 +68,18 @@ func (f *Flow) createRelasePR(ctx context.Context, e Event) (string, error) {
 	return *prURL, nil
 }
 
+func (f *Flow) notifyOnlyBuildResult(e Event) error {
+	d := slackbot.MessageDetail{
+		IsSuccess:  true,
+		IsPrNotify: false,
+		LogURL:     e.LogURL,
+		AppName:    e.getAppName(),
+		Images:     e.Images,
+	}
+
+	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
+}
+
 func (f *Flow) notifyRelasePR(e Event, prURL string) error {
 	d := slackbot.MessageDetail{
 		IsSuccess:  true,
@@ -78,7 +91,6 @@ func (f *Flow) notifyRelasePR(e Event, prURL string) error {
 	}
 
 	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
-
 }
 
 func (f *Flow) notifyDeploy(e Event) error {
