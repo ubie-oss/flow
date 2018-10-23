@@ -6,7 +6,10 @@ import (
 )
 
 const (
+	statusQueued  = "QUEUED"
+	statusWorking = "WORKING"
 	statusSuccess = "SUCCESS"
+	statusFailure = "FAILURE"
 )
 
 // Event is Cloud Build events published to Cloud Pub/Sub
@@ -37,7 +40,6 @@ type Artifacts struct {
 }
 
 func (e Event) isFinished() bool {
-	// @todo better to handle with Status: QUEUED, WORKING, SUCCESS, FAILURE
 	return (e.FinishTime != nil)
 }
 

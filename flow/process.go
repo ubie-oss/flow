@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/sakajunquality/flow/gitbot"
@@ -12,6 +13,7 @@ import (
 
 func (f *Flow) process(ctx context.Context, e Event) error {
 	if !e.isFinished() { // Notify only the finished
+		fmt.Fprintf(os.Stdout, "Build hasn't finished\n")
 		return nil
 	}
 
@@ -54,6 +56,8 @@ func (f *Flow) createRelasePR(ctx context.Context, e Event) (string, error) {
 
 	// Add Commit Author
 	release.AddAuthor(cfg.GitAuthor.Name, cfg.GitAuthor.Email)
+
+	fmt.Printf("%#v", release)
 
 	// Create a release PullRequest
 	prURL, err := release.Create(ctx, f.githubToken)

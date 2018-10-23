@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	countMu sync.Mutex
-	killCh  chan bool
+	mu     sync.Mutex
+	killCh chan bool
 )
 
 func (f *Flow) subscribe(ctx context.Context, errCh chan error) {
@@ -41,7 +41,9 @@ func (f *Flow) subscribe(ctx context.Context, errCh chan error) {
 
 			fmt.Fprintf(os.Stdout, "Processing event: %#v\n", e)
 
-			countMu.Lock()
+			mu.Lock()
+			defer mu.Unlock()
+
 			if err := f.process(ctx, e); err != nil {
 				fmt.Fprintf(os.Stderr, "Error: cloud not process event: %s\n", err)
 
@@ -49,7 +51,6 @@ func (f *Flow) subscribe(ctx context.Context, errCh chan error) {
 				return
 			}
 			msg.Ack()
-			countMu.Unlock()
 		})
 
 		if err != nil {

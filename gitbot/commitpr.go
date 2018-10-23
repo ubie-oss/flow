@@ -63,7 +63,7 @@ func (r *Release) createPR() (*string, error) {
 	newPR := &github.NewPullRequest{
 		Title:               github.String(r.prTitle),
 		Head:                github.String(r.commitBranch),
-		Base:                github.String(r.commitBranch),
+		Base:                github.String(r.baseBranch),
 		Body:                github.String(""), // maybe get diff from the app repo
 		MaintainerCanModify: github.Bool(true),
 	}
