@@ -1,6 +1,7 @@
 package flow
 
 import (
+	"fmt"
 	"strings"
 	"time"
 )
@@ -48,10 +49,14 @@ func (e Event) isSuuccess() bool {
 }
 
 func (e Event) isApplicationBuild() bool {
-	return (e.RepoName != cfg.ManifestName)
+	return (e.RepoName != getRepoNameByManifest(cfg.ManifestOwner, cfg.ManifestName))
 }
 
 func (e Event) getAppName() string {
 	// @todo trim organization
 	return strings.Replace(e.RepoName, "github-", "", 1)
+}
+
+func getRepoNameByManifest(owner, name string) string {
+	return fmt.Sprintf("github-%s-%s", owner, name)
 }
