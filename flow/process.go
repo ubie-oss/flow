@@ -130,9 +130,12 @@ func (f *Flow) notifyFalure(e Event, errorMessage string, app *Application) erro
 	d := slackbot.MessageDetail{
 		IsSuccess:    false,
 		LogURL:       e.LogURL,
-		AppName:      app.Name,
 		Images:       e.Images,
 		ErrorMessage: errorMessage,
+	}
+
+	if app != nil {
+		d.AppName = app.Name
 	}
 
 	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
