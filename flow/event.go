@@ -1,8 +1,6 @@
 package flow
 
 import (
-	"fmt"
-	"strings"
 	"time"
 )
 
@@ -22,6 +20,8 @@ type Event struct {
 	LogURL     string     `json:"logUrl"`
 	StartTime  *time.Time `json:"startTime"`
 	FinishTime *time.Time `json:"finishTime"`
+
+	TriggerID string `json:"buildTriggerId"`
 
 	EventSource `json:"source"`
 	Artifacts   `json:"artifacts"`
@@ -48,15 +48,6 @@ func (e Event) isSuuccess() bool {
 	return (e.Status == statusSuccess)
 }
 
-func (e Event) isApplicationBuild() bool {
-	return (e.RepoName != getRepoNameByManifest(cfg.ManifestOwner, cfg.ManifestName))
-}
-
-func (e Event) getAppName() string {
-	// @todo trim organization
-	return strings.Replace(e.RepoName, "github-", "", 1)
-}
-
-func getRepoNameByManifest(owner, name string) string {
-	return fmt.Sprintf("github-%s-%s", owner, name)
+func (e Event) isTriggerdBuld() bool {
+	return (e.TriggerID != "")
 }

@@ -13,6 +13,7 @@ type Config struct {
 
 type Application struct {
 	Name        string     `yaml:"name"`
+	TriggerID   string     `yaml:"trigger_id"`
 	SourceOwner string     `yaml:"source_owner"`
 	SourceName  string     `yaml:"source_name"`
 	Env         string     `yaml:"env"`
