@@ -67,7 +67,7 @@ func (s *slackMessage) Post() error {
 	if s.PrURL != "" {
 		fields = append(fields, slack.AttachmentField{
 			Title: "Deploy Pull Request",
-			Value: fmt.Sprintf("Merge this PullRequest for Production Relase\n%s\n", s.PrURL),
+			Value: fmt.Sprintf("Merge this PullRequest for Relase\n%s\n", s.PrURL),
 			Short: false,
 		})
 	}
