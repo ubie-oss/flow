@@ -20,24 +20,19 @@ type PullRequest struct {
 }
 
 func (f *Flow) process(ctx context.Context, e Event) error {
-	if !e.isTriggerdBuld() { // Notify only the triggerd build
-		fmt.Fprintf(os.Stdout, "Build is not triggerd one\n")
-		return nil
-	}
-
 	if !e.isFinished() { // Notify only the finished
 		fmt.Fprintf(os.Stdout, "Build hasn't finished\n")
 		return nil
-	}
-
-	if !e.isSuuccess() { // CloudBuild Failure
-		return f.notifyFalure(e, "", nil)
 	}
 
 	app, err := getApplicationByEventTriggerID(e.TriggerID)
 	if err != nil {
 		fmt.Fprintf(os.Stdout, "No app is configured for %s\n", e.TriggerID)
 		return nil
+	}
+
+	if !e.isSuuccess() { // CloudBuild Failure
+		return f.notifyFalure(e, "", nil)
 	}
 
 	var prs PullRequests
