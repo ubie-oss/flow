@@ -65,8 +65,9 @@ func (f *Flow) process(ctx context.Context, e Event) error {
 	return f.notifyRelasePR(e, prs, app)
 }
 
+// createRelasePR submits release PullRequest to manifest repository
 func (f *Flow) createRelasePR(ctx context.Context, e Event, a Application, m Manifest) (string, error) {
-	repo := gitbot.NewRepo(cfg.ManifestOwner, cfg.ManifestName, cfg.ManifestBaseBranch)
+	repo := gitbot.NewRepo(a.ManifestOwner, a.ManifestName, a.ManifestBaseBranch)
 	version, err := getVersionFromImage(e.Images)
 	if err != nil {
 		return "", err
@@ -161,6 +162,7 @@ func getApplicationByEventTriggerID(eventTriggerID string) (*Application, error)
 	return nil, errors.New("No application found for " + eventTriggerID)
 }
 
+// Retrieve Docker Image tag from the built image
 func getVersionFromImage(images []string) (string, error) {
 	if len(images) < 1 {
 		return "", errors.New("no images found")
