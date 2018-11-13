@@ -23,8 +23,14 @@ type Application struct {
 }
 
 type Manifest struct {
-	Env   string   `yaml:"env"`
-	Files []string `yaml:"files"`
+	Env     string   `yaml:"env"`
+	Files   []string `yaml:"files"`
+	Filters Filters  `yaml:"filters"`
+}
+
+type Filters struct {
+	IncludePrefixes []string `yaml:"include_prefixes"`
+	ExcludePrefixes []string `yaml:"exclude_prefixes"`
 }
 
 type GitAuthor struct {
