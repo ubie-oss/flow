@@ -37,8 +37,18 @@ func (f *Flow) process(ctx context.Context, e Event) error {
 
 	var prs PullRequests
 
+	version, err := getVersionFromImage(e.Images)
+	if err != nil {
+		return f.notifyFalure(e, fmt.Sprintf("Could not ditermine version from image: %s", err), nil)
+	}
+
 	for _, manifest := range app.Manifests {
-		prURL, err := f.createRelasePR(ctx, e, *app, manifest)
+		if !shouldCreatePR(manifest, version) {
+			continue
+		}
+
+		prURL, err := f.createRelasePR(ctx, version, *app, manifest)
+
 		if err != nil {
 			prs = append(prs, PullRequest{
 				env: manifest.Env,
@@ -60,14 +70,25 @@ func (f *Flow) process(ctx context.Context, e Event) error {
 	return f.notifyRelasePR(e, prs, app)
 }
 
-// createRelasePR submits release PullRequest to manifest repository
-func (f *Flow) createRelasePR(ctx context.Context, e Event, a Application, m Manifest) (string, error) {
-	repo := gitbot.NewRepo(a.ManifestOwner, a.ManifestName, a.ManifestBaseBranch)
-	version, err := getVersionFromImage(e.Images)
-	if err != nil {
-		return "", err
+func shouldCreatePR(m Manifest, version string) bool {
+	for _, prefix := range m.Filters.IncludePrefixes {
+		if !strings.HasPrefix(version, prefix) {
+			return false
+		}
 	}
 
+	for _, prefix := range m.Filters.ExcludePrefixes {
+		if strings.HasPrefix(version, prefix) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// createRelasePR submits release PullRequest to manifest repository
+func (f *Flow) createRelasePR(ctx context.Context, version string, a Application, m Manifest) (string, error) {
+	repo := gitbot.NewRepo(a.ManifestOwner, a.ManifestName, a.ManifestBaseBranch)
 	release := gitbot.NewRelease(*repo, a.Name, m.Env, version)
 
 	for _, filePath := range m.Files {

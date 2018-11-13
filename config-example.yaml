@@ -8,12 +8,28 @@ applications:
     manifest_base_branch: master
     image_tag: gcr.io/$PROJECT_ID/hoge
     manifests:
+      - env: dev
+        files:
+          - overlays/dev/deployment.yaml
+      - env: qa
+        files:
+          - overlays/qa/deployment.yaml
+        filters:
+          include_prefixes:
+            - qa # qa.*
+            - release # release.*
       - env: staging
         files:
           - overlays/staging/deployment.yaml
+        filters:
+          include_prefixes:
+            - v # v.*
       - env: production
         files:
           - overlays/production/deployment.yaml
+        filters:
+          include_prefixes:
+            - v # v.*
 
 git_author:
   name: sakajunquality
