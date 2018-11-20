@@ -71,19 +71,23 @@ func (f *Flow) process(ctx context.Context, e Event) error {
 }
 
 func shouldCreatePR(m Manifest, version string) bool {
-	for _, prefix := range m.Filters.IncludePrefixes {
-		if !strings.HasPrefix(version, prefix) {
-			return false
-		}
-	}
-
 	for _, prefix := range m.Filters.ExcludePrefixes {
 		if strings.HasPrefix(version, prefix) {
 			return false
 		}
 	}
 
-	return true
+	if len(m.Filters.IncludePrefixes) == 0 {
+		return true
+	}
+
+	for _, prefix := range m.Filters.IncludePrefixes {
+		if strings.HasPrefix(version, prefix) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // createRelasePR submits release PullRequest to manifest repository
