@@ -30,6 +30,8 @@ applications:
         filters:
           include_prefixes:
             - v # v.*
+        pr_body: |
+          THIS IS PRODUCTION
 
 git_author:
   name: sakajunquality

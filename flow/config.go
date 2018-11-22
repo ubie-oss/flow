@@ -26,6 +26,7 @@ type Manifest struct {
 	Env     string   `yaml:"env"`
 	Files   []string `yaml:"files"`
 	Filters Filters  `yaml:"filters"`
+	PRBody  string   `yaml:"pr_body"`
 }
 
 type Filters struct {

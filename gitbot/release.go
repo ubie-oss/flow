@@ -27,6 +27,7 @@ type PullRequest struct {
 	commitBranch  string
 	commitMessage string
 	prTitle       string
+	prBody        string
 }
 
 type Author struct {
@@ -51,9 +52,9 @@ func NewRepo(sourceOwner, sourceRepo, baseBranch string) *Repo {
 }
 
 // NewRelease is ...
-func NewRelease(repo Repo, appName, appEnv, appVersion string) *Release {
-	branch := fmt.Sprintf("release/%s-%s-%s", appName, appEnv, appVersion)
-	subject := fmt.Sprintf("Release %s %s %s", appName, appEnv, appVersion)
+func NewRelease(repo Repo, appName, appEnv, appVersion, prBody string) *Release {
+	branch := fmt.Sprintf("release/%s-%s", appEnv, appVersion)
+	subject := fmt.Sprintf("%s %s Release", appEnv, appVersion)
 
 	return &Release{
 		Repo: repo,
@@ -61,6 +62,7 @@ func NewRelease(repo Repo, appName, appEnv, appVersion string) *Release {
 			commitBranch:  branch,
 			commitMessage: subject,
 			prTitle:       subject,
+			prBody:        prBody,
 		},
 	}
 }
