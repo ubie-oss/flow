@@ -32,8 +32,9 @@ type EventSource struct {
 }
 
 type EventRepo struct {
-	RepoName string `json:"repoName"`
-	TagName  string `json:"tagName"`
+	RepoName   string  `json:"repoName"`
+	TagName    *string `json:"tagName"`
+	BranchName *string `json:"branchName"`
 }
 
 type Artifacts struct {
