@@ -12,6 +12,7 @@ require (
 	github.com/nlopes/slack v0.4.0
 	github.com/pkg/errors v0.8.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/sakajunquality/cloud-pubsub-events v0.0.0-20190117094524-e3828a247582
 	github.com/stretchr/testify v1.2.2 // indirect
 	go.opencensus.io v0.17.0 // indirect
 	golang.org/x/net v0.0.0-20181017193950-04a2e542c03f // indirect

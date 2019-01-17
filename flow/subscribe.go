@@ -2,13 +2,13 @@ package flow
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"sync"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/sakajunquality/cloud-pubsub-events/cloudbuildevent"
 )
 
 var (
@@ -31,9 +31,8 @@ func (f *Flow) subscribe(ctx context.Context, errCh chan error) {
 		}
 
 		err := subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-			var e Event
-
-			if err := json.Unmarshal(msg.Data, &e); err != nil {
+			e, err := cloudbuildevent.ParseMessage(msg.Data)
+			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: could not decode message data: %#v", msg)
 				msg.Ack()
 				return

@@ -7,10 +7,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/sakajunquality/cloud-pubsub-events/cloudbuildevent"
 	"github.com/sakajunquality/flow/gitbot"
 	"github.com/sakajunquality/flow/slackbot"
 )
 
+type Event = cloudbuildevent.Event
 type PullRequests []PullRequest
 
 type PullRequest struct {
@@ -20,18 +22,18 @@ type PullRequest struct {
 }
 
 func (f *Flow) process(ctx context.Context, e Event) error {
-	if !e.isFinished() { // Notify only the finished
+	if !e.IsFinished() { // Notify only the finished
 		fmt.Fprintf(os.Stdout, "Build hasn't finished\n")
 		return nil
 	}
 
-	app, err := getApplicationByEventTriggerID(e.TriggerID)
+	app, err := getApplicationByEventTriggerID(*e.TriggerID)
 	if err != nil {
 		fmt.Fprintf(os.Stdout, "No app is configured for %s\n", e.TriggerID)
 		return nil
 	}
 
-	if !e.isSuuccess() { // CloudBuild Failure
+	if !e.IsSuuccess() { // CloudBuild Failure
 		return f.notifyFalure(e, "", nil)
 	}
 
@@ -148,7 +150,7 @@ func (f *Flow) notifyDeploy(e Event) error {
 		IsSuccess:  true,
 		IsPrNotify: false,
 		LogURL:     e.LogURL,
-		AppName:    e.RepoName,
+		AppName:    *e.RepoName,
 		TagName:    e.TagName,
 		BranchName: e.BranchName,
 	}
