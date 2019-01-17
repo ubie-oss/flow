@@ -21,6 +21,8 @@ type MessageDetail struct {
 	Images       []string
 	LogURL       string
 	PrURL        string
+	BranchName   *string
+	TagName      *string
 	Time         time.Duration
 	ErrorMessage string
 }
@@ -53,8 +55,24 @@ func (s *slackMessage) Post() error {
 	fields = append(fields, slack.AttachmentField{
 		Title: "App",
 		Value: s.AppName,
-		Short: false,
+		Short: true,
 	})
+
+	if s.BranchName != nil {
+		fields = append(fields, slack.AttachmentField{
+			Title: "Branch",
+			Value: *s.BranchName,
+			Short: true,
+		})
+	}
+
+	if s.TagName != nil {
+		fields = append(fields, slack.AttachmentField{
+			Title: "Tag",
+			Value: *s.TagName,
+			Short: true,
+		})
+	}
 
 	if len(s.Images) > 0 {
 		fields = append(fields, slack.AttachmentField{

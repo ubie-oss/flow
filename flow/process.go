@@ -130,6 +130,8 @@ func (f *Flow) notifyRelasePR(e Event, prs PullRequests, app *Application) error
 		LogURL:     e.LogURL,
 		AppName:    app.Name,
 		Images:     e.Images,
+		TagName:    e.TagName,
+		BranchName: e.BranchName,
 		PrURL:      prURL,
 	}
 
@@ -142,6 +144,8 @@ func (f *Flow) notifyDeploy(e Event) error {
 		IsPrNotify: false,
 		LogURL:     e.LogURL,
 		AppName:    e.RepoName,
+		TagName:    e.TagName,
+		BranchName: e.BranchName,
 	}
 
 	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
@@ -153,6 +157,8 @@ func (f *Flow) notifyFalure(e Event, errorMessage string, app *Application) erro
 		LogURL:       e.LogURL,
 		Images:       e.Images,
 		ErrorMessage: errorMessage,
+		TagName:      e.TagName,
+		BranchName:   e.BranchName,
 	}
 
 	if app != nil {
