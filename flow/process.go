@@ -12,7 +12,6 @@ import (
 	"github.com/sakajunquality/flow/slackbot"
 )
 
-type Event = cloudbuildevent.Event
 type PullRequests []PullRequest
 
 type PullRequest struct {
@@ -21,7 +20,7 @@ type PullRequest struct {
 	err error
 }
 
-func (f *Flow) process(ctx context.Context, e Event) error {
+func (f *Flow) process(ctx context.Context, e cloudbuildevent.Event) error {
 	if !e.IsFinished() { // Notify only the finished
 		fmt.Fprintf(os.Stdout, "Build hasn't finished\n")
 		return nil
@@ -119,7 +118,7 @@ func (f *Flow) createRelasePR(ctx context.Context, version string, a Application
 	return *prURL, nil
 }
 
-func (f *Flow) notifyRelasePR(e Event, prs PullRequests, app *Application) error {
+func (f *Flow) notifyRelasePR(e cloudbuildevent.Event, prs PullRequests, app *Application) error {
 	var prURL string
 
 	for _, pr := range prs {
@@ -145,7 +144,7 @@ func (f *Flow) notifyRelasePR(e Event, prs PullRequests, app *Application) error
 	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
 }
 
-func (f *Flow) notifyDeploy(e Event) error {
+func (f *Flow) notifyDeploy(e cloudbuildevent.Event) error {
 	d := slackbot.MessageDetail{
 		IsSuccess:  true,
 		IsPrNotify: false,
@@ -158,7 +157,7 @@ func (f *Flow) notifyDeploy(e Event) error {
 	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
 }
 
-func (f *Flow) notifyFalure(e Event, errorMessage string, app *Application) error {
+func (f *Flow) notifyFalure(e cloudbuildevent.Event, errorMessage string, app *Application) error {
 	d := slackbot.MessageDetail{
 		IsSuccess:    false,
 		LogURL:       e.LogURL,
