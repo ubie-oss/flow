@@ -92,7 +92,12 @@ func shouldCreatePR(m Manifest, version string) bool {
 
 // createRelasePR submits release PullRequest to manifest repository
 func (f *Flow) createRelasePR(ctx context.Context, version string, a Application, m Manifest) (string, error) {
-	repo := gitbot.NewRepo(a.ManifestOwner, a.ManifestName, a.ManifestBaseBranch)
+	baseBranch := a.ManifestBaseBranch
+	if m.BaseBranch != "" {
+		baseBranch = m.BaseBranch
+	}
+
+	repo := gitbot.NewRepo(a.ManifestOwner, a.ManifestName, baseBranch)
 	release := gitbot.NewRelease(*repo, a.Name, m.Env, version, m.PRBody)
 
 	for _, filePath := range m.Files {
