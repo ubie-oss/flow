@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/sakajunquality/cloud-pubsub-events/cloudbuildevent"
 	"github.com/sakajunquality/flow/gitbot"
 	"github.com/sakajunquality/flow/slackbot"
 )
@@ -19,19 +20,19 @@ type PullRequest struct {
 	err error
 }
 
-func (f *Flow) process(ctx context.Context, e Event) error {
-	if !e.isFinished() { // Notify only the finished
+func (f *Flow) process(ctx context.Context, e cloudbuildevent.Event) error {
+	if !e.IsFinished() { // Notify only the finished
 		fmt.Fprintf(os.Stdout, "Build hasn't finished\n")
 		return nil
 	}
 
-	app, err := getApplicationByEventTriggerID(e.TriggerID)
+	app, err := getApplicationByEventTriggerID(*e.TriggerID)
 	if err != nil {
 		fmt.Fprintf(os.Stdout, "No app is configured for %s\n", e.TriggerID)
 		return nil
 	}
 
-	if !e.isSuuccess() { // CloudBuild Failure
+	if !e.IsSuuccess() { // CloudBuild Failure
 		return f.notifyFalure(e, "", nil)
 	}
 
@@ -117,7 +118,7 @@ func (f *Flow) createRelasePR(ctx context.Context, version string, a Application
 	return *prURL, nil
 }
 
-func (f *Flow) notifyRelasePR(e Event, prs PullRequests, app *Application) error {
+func (f *Flow) notifyRelasePR(e cloudbuildevent.Event, prs PullRequests, app *Application) error {
 	var prURL string
 
 	for _, pr := range prs {
@@ -143,12 +144,12 @@ func (f *Flow) notifyRelasePR(e Event, prs PullRequests, app *Application) error
 	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
 }
 
-func (f *Flow) notifyDeploy(e Event) error {
+func (f *Flow) notifyDeploy(e cloudbuildevent.Event) error {
 	d := slackbot.MessageDetail{
 		IsSuccess:  true,
 		IsPrNotify: false,
 		LogURL:     e.LogURL,
-		AppName:    e.RepoName,
+		AppName:    *e.RepoName,
 		TagName:    e.TagName,
 		BranchName: e.BranchName,
 	}
@@ -156,7 +157,7 @@ func (f *Flow) notifyDeploy(e Event) error {
 	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
 }
 
-func (f *Flow) notifyFalure(e Event, errorMessage string, app *Application) error {
+func (f *Flow) notifyFalure(e cloudbuildevent.Event, errorMessage string, app *Application) error {
 	d := slackbot.MessageDetail{
 		IsSuccess:    false,
 		LogURL:       e.LogURL,
