@@ -26,10 +26,13 @@ func (f *Flow) process(ctx context.Context, e cloudbuildevent.Event) error {
 		return nil
 	}
 
+	if e.TriggerID == nil {
+		return errors.New("Only the triggered build is supported")
+	}
+
 	app, err := getApplicationByEventTriggerID(*e.TriggerID)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "No app is configured for %s\n", e.TriggerID)
-		return nil
+		return fmt.Errorf("No app is configured for %s", e.TriggerID)
 	}
 
 	if !e.IsSuuccess() { // CloudBuild Failure
