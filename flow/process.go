@@ -102,7 +102,8 @@ func (f *Flow) createRelasePR(ctx context.Context, version string, a Application
 	}
 
 	repo := gitbot.NewRepo(a.ManifestOwner, a.ManifestName, baseBranch)
-	release := gitbot.NewRelease(*repo, a.Name, m.Env, version, m.PRBody)
+	body := fmt.Sprintf("%s\nhttps://github.com/%s/%s/releases/tag/%s", m.PRBody, a.SourceOwner, a.SourceName, version)
+	release := gitbot.NewRelease(*repo, a.Name, m.Env, version, body)
 
 	for _, filePath := range m.Files {
 		release.AddChanges(filePath, fmt.Sprintf("%s:.*", a.ImageName), fmt.Sprintf("%s:%s", a.ImageName, version))
