@@ -10,13 +10,17 @@ import (
 )
 
 const (
-	pubsubTopicID = "cloud-builds"
-	subName       = "cloudbuild-flow-sub"
+	pubsubGCBTopicID = "cloud-builds"
+	pubsubGCRTopicID = "gcr"
+
+	subscriptionPrefix = "flow-sub-"
 )
 
 var (
-	subscription *pubsub.Subscription
-	cfg          *Config
+	subscriptionGCB *pubsub.Subscription
+	subscriptionGCR *pubsub.Subscription
+	client          *pubsub.Client
+	cfg             *Config
 )
 
 type Flow struct {
@@ -43,22 +47,34 @@ func New(c *Config) (*Flow, error) {
 }
 
 func (f *Flow) Start(ctx context.Context, errCh chan error) {
-	pubsubClient, err := pubsub.NewClient(ctx, f.projectID)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating pubsub client: %v.\n", err)
+	client, err := newPubSubClient(ctx, f.projectID)
+	if err := nil {
+		return
 	}
 
-	// Create Cloud Pub/Sub topic if not exist
-	topic := pubsubClient.Topic(pubsubTopicID)
-	exists, err := topic.Exists(ctx)
+	err = createGCBSubscription()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error checking for topic: %v.\n", err)
-
+		return
 	}
 
-	// Create topic subscription
-	subscription = pubsubClient.Subscription(subName)
-	exists, err = subscription.Exists(ctx)
+	go f.subscribeGCB(ctx, errCh)
+}
+
+func newPubSubClient(ctx context.Context, projectID string) (*pubsub.Client, error) {
+	client, err := pubsub.NewClient(ctx, projectID)
+	if err != nil {
+		return nil, fmt.Errorf( "Error creating pubsub client: %v.\n", err)
+	}
+	return client, nil
+}
+
+func createGCBSubscription(ctx context.Context, client *pubsub.Client) error {
+	topic := client.Topic(pubsubGCBTopicID)
+	subscriptionName := fmt.Sprintf("%s%s", subscriptionPrefix+pubsubGCBTopicID)
+
+	subscriptionGCB = pubsubClient.Subscription(subscriptionName)
+
+	exists, err := subscriptionGCB.Exists(ctx)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error checking for subscription: %v.\n", err)
 	}
@@ -67,6 +83,4 @@ func (f *Flow) Start(ctx context.Context, errCh chan error) {
 			fmt.Fprintf(os.Stderr, "Failed to create subscription: %v.\n", err)
 		}
 	}
-
-	go f.subscribe(ctx, errCh)
 }

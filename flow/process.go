@@ -12,15 +12,7 @@ import (
 	"github.com/sakajunquality/flow/slackbot"
 )
 
-type PullRequests []PullRequest
-
-type PullRequest struct {
-	env string
-	url string
-	err error
-}
-
-func (f *Flow) process(ctx context.Context, e cloudbuildevent.Event) error {
+func (f *Flow) processGCB(ctx context.Context, e cloudbuildevent.Event) error {
 	if !e.IsFinished() { // Notify only the finished
 		fmt.Fprintf(os.Stdout, "Build hasn't finished\n")
 		return nil

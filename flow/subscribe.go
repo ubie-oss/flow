@@ -16,7 +16,7 @@ var (
 	killCh chan bool
 )
 
-func (f *Flow) subscribe(ctx context.Context, errCh chan error) {
+func (f *Flow) subscribeGCB(ctx context.Context, errCh chan error) {
 	killCh := make(chan bool, 2)
 
 	for {
@@ -43,7 +43,7 @@ func (f *Flow) subscribe(ctx context.Context, errCh chan error) {
 			mu.Lock()
 			defer mu.Unlock()
 
-			if err := f.process(ctx, e); err != nil {
+			if err := f.processGCB(ctx, e); err != nil {
 				fmt.Fprintf(os.Stderr, "Error: cloud not process event: %s\n", err)
 
 				msg.Ack()
