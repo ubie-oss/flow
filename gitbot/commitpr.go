@@ -26,7 +26,7 @@ func (r *Release) getTree(ref *github.Reference) (tree *github.Tree, err error) 
 
 	// Load each file into the tree.
 	for _, c := range r.Changes {
-		content, err := r.getChangedContent(c, ref)
+		content, err := r.getChangedContent(c, r.Repo.baseBranch)
 		if err != nil {
 			return nil, err
 		}
@@ -76,10 +76,9 @@ func (r *Release) createPR() (*string, error) {
 	return github.String(pr.GetHTMLURL()), nil
 }
 
-func (r *Release) getChangedContent(c Change, ref *github.Reference) (string, error) {
+func (r *Release) getChangedContent(c Change, baseBranch string) (string, error) {
 	opt := &github.RepositoryContentGetOptions{
-		// Ref: *ref.URL,
-		Ref: "master",
+		Ref: baseBranch,
 	}
 
 	f, _, _, err := client.Repositories.GetContents(r.ctx, r.sourceOwner, r.sourceRepo, c.filePath, opt)
