@@ -48,11 +48,11 @@ func New(c *Config) (*Flow, error) {
 
 func (f *Flow) Start(ctx context.Context, errCh chan error) {
 	client, err := newPubSubClient(ctx, f.projectID)
-	if err := nil {
+	if err != nil {
 		return
 	}
 
-	err = createGCBSubscription()
+	err = createGCBSubscription(ctx, client)
 	if err != nil {
 		return
 	}
@@ -63,7 +63,7 @@ func (f *Flow) Start(ctx context.Context, errCh chan error) {
 func newPubSubClient(ctx context.Context, projectID string) (*pubsub.Client, error) {
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, fmt.Errorf( "Error creating pubsub client: %v.\n", err)
+		return nil, fmt.Errorf("Error creating pubsub client: %s", err)
 	}
 	return client, nil
 }
@@ -72,15 +72,16 @@ func createGCBSubscription(ctx context.Context, client *pubsub.Client) error {
 	topic := client.Topic(pubsubGCBTopicID)
 	subscriptionName := fmt.Sprintf("%s%s", subscriptionPrefix+pubsubGCBTopicID)
 
-	subscriptionGCB = pubsubClient.Subscription(subscriptionName)
+	subscriptionGCB = client.Subscription(subscriptionName)
 
 	exists, err := subscriptionGCB.Exists(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error checking for subscription: %v.\n", err)
+		return fmt.Errorf("Error checking for subscription: %s", err)
 	}
 	if !exists {
-		if _, err = pubsubClient.CreateSubscription(ctx, subName, pubsub.SubscriptionConfig{Topic: topic}); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create subscription: %v.\n", err)
+		if _, err = client.CreateSubscription(ctx, subscriptionName, pubsub.SubscriptionConfig{Topic: topic}); err != nil {
+			fmt.Errorf("Failed to create subscription: %s", err)
 		}
 	}
+	return nil
 }

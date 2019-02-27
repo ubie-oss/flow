@@ -30,7 +30,7 @@ func (f *Flow) subscribeGCB(ctx context.Context, errCh chan error) {
 			break
 		}
 
-		err := subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+		err := subscriptionGCB.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 			e, err := cloudbuildevent.ParseMessage(msg.Data)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: could not decode message data: %#v", msg)
