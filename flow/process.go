@@ -51,7 +51,7 @@ func (f *Flow) process(ctx context.Context, e cloudbuildevent.Event) error {
 			continue
 		}
 
-		prURL, err := f.createRelasePR(ctx, version, *app, manifest)
+		prURL, err := f.createReleasePR(ctx, version, *app, manifest)
 
 		if err != nil {
 			prs = append(prs, PullRequest{
@@ -71,7 +71,7 @@ func (f *Flow) process(ctx context.Context, e cloudbuildevent.Event) error {
 		f.notifyFalure(e, err.Error(), app)
 		return err
 	}
-	return f.notifyRelasePR(e, prs, app)
+	return f.notifyReleasePR(e, prs, app)
 }
 
 func shouldCreatePR(m Manifest, version string) bool {
@@ -94,8 +94,8 @@ func shouldCreatePR(m Manifest, version string) bool {
 	return false
 }
 
-// createRelasePR submits release PullRequest to manifest repository
-func (f *Flow) createRelasePR(ctx context.Context, version string, a Application, m Manifest) (string, error) {
+// createReleasePR submits release PullRequest to manifest repository
+func (f *Flow) createReleasePR(ctx context.Context, version string, a Application, m Manifest) (string, error) {
 	baseBranch := a.ManifestBaseBranch
 	if m.BaseBranch != "" {
 		baseBranch = m.BaseBranch
@@ -127,7 +127,7 @@ func (f *Flow) createRelasePR(ctx context.Context, version string, a Application
 	return *prURL, nil
 }
 
-func (f *Flow) notifyRelasePR(e cloudbuildevent.Event, prs PullRequests, app *Application) error {
+func (f *Flow) notifyReleasePR(e cloudbuildevent.Event, prs PullRequests, app *Application) error {
 	var prURL string
 
 	for _, pr := range prs {
