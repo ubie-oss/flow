@@ -18,6 +18,9 @@ type Application struct {
 	ManifestName       string `yaml:"manifest_name"`
 	ManifestBaseBranch string `yaml:"manifest_base_branch"`
 
+	RewriteVersion bool `yaml:"rewrite_version"`
+	RewriteNewTag  bool `yaml:"rewrite_new_tag"`
+
 	ImageName string     `yaml:"image_tag"`
 	Manifests []Manifest `yaml:"manifests"`
 }
