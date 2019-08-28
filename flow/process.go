@@ -112,6 +112,13 @@ func (f *Flow) createReleasePR(ctx context.Context, version string, a Applicatio
 
 	for _, filePath := range m.Files {
 		release.AddChanges(filePath, fmt.Sprintf("%s:.*", a.ImageName), fmt.Sprintf("%s:%s", a.ImageName, version))
+		if a.RewriteVersion {
+			release.AddChanges(filePath, "version: .*", fmt.Sprintf("version: %s", version))
+		}
+
+		if a.RewriteNewTag && strings.Contains(filePath, "kustomization.yaml") {
+			release.AddChanges(filePath, "newTag: .*", fmt.Sprintf("newTag: %s", version))
+		}
 	}
 
 	// Add Commit Author
