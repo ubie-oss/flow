@@ -8,10 +8,7 @@ type Config struct {
 }
 
 type Application struct {
-	Name string `yaml:"name"`
-
-	TriggerID string `yaml:"trigger_id"`
-
+	Name               string `yaml:"name"`
 	SourceOwner        string `yaml:"source_owner"`
 	SourceName         string `yaml:"source_name"`
 	ManifestOwner      string `yaml:"manifest_owner"`
@@ -21,7 +18,7 @@ type Application struct {
 	RewriteVersion bool `yaml:"rewrite_version"`
 	RewriteNewTag  bool `yaml:"rewrite_new_tag"`
 
-	ImageName string     `yaml:"image_tag"`
+	Image     string     `yaml:"image_tag"`
 	Manifests []Manifest `yaml:"manifests"`
 }
 
