@@ -86,8 +86,6 @@ func (r *Release) Create(ctx context.Context, token string) (*string, error) {
 	tc := oauth2.NewClient(ctx, ts)
 	client = github.NewClient(tc)
 
-	fmt.Printf("%#v", r)
-
 	ref, err := r.getRef()
 	if err != nil {
 		return nil, err

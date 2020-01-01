@@ -2,7 +2,6 @@ package slackbot
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/nlopes/slack"
@@ -18,7 +17,8 @@ type MessageDetail struct {
 	IsSuccess    bool
 	IsPrNotify   bool
 	AppName      string
-	Images       []string
+	Image        string
+	Version      string
 	LogURL       string
 	PrURL        string
 	BranchName   *string
@@ -58,29 +58,11 @@ func (s *slackMessage) Post() error {
 		Short: true,
 	})
 
-	if s.BranchName != nil {
-		fields = append(fields, slack.AttachmentField{
-			Title: "Branch",
-			Value: *s.BranchName,
-			Short: true,
-		})
-	}
-
-	if s.TagName != nil {
-		fields = append(fields, slack.AttachmentField{
-			Title: "Tag",
-			Value: *s.TagName,
-			Short: true,
-		})
-	}
-
-	if len(s.Images) > 0 {
-		fields = append(fields, slack.AttachmentField{
-			Title: "Images",
-			Value: "```\n" + strings.Join(s.Images, "\n") + "\n```",
-			Short: false,
-		})
-	}
+	fields = append(fields, slack.AttachmentField{
+		Title: "Image",
+		Value: fmt.Sprintf("```\n%s:%s\n```", s.Image, s.Version),
+		Short: false,
+	})
 
 	if s.PrURL != "" {
 		fields = append(fields, slack.AttachmentField{
@@ -89,12 +71,6 @@ func (s *slackMessage) Post() error {
 			Short: false,
 		})
 	}
-
-	fields = append(fields, slack.AttachmentField{
-		Title: "Logs",
-		Value: fmt.Sprintf("<%s|BuildLog>", s.LogURL),
-		Short: false,
-	})
 
 	if s.ErrorMessage != "" {
 		fields = append(fields, slack.AttachmentField{

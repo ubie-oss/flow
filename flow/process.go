@@ -32,19 +32,34 @@ func (f *Flow) process(ctx context.Context, e cloudbuildevent.Event) error {
 
 	app, err := getApplicationByEventTriggerID(*e.TriggerID)
 	if err != nil {
-		return fmt.Errorf("No app is configured for %s", e.TriggerID)
+		return fmt.Errorf("No app is configured for %s", *e.TriggerID)
 	}
 
 	if !e.IsSuuccess() { // CloudBuild Failure
 		return f.notifyFalure(e, "", nil)
 	}
 
-	var prs PullRequests
-
 	version, err := getVersionFromImage(e.Images)
 	if err != nil {
 		return f.notifyFalure(e, fmt.Sprintf("Could not ditermine version from image: %s", err), nil)
 	}
+
+	prs := f.generatePRs(ctx, app, version)
+	return f.notifyReleasePR(e.Images[0], version, prs, app)
+}
+
+func (f *Flow) processImage(ctx context.Context, image, version string) error {
+	app, err := getApplicationByImage(image)
+	if err != nil {
+		return err
+	}
+
+	prs := f.generatePRs(ctx, app, version)
+	return f.notifyReleasePR(image, version, prs, app)
+}
+
+func (f *Flow) generatePRs(ctx context.Context, app *Application, version string) PullRequests {
+	var prs PullRequests
 
 	for _, manifest := range app.Manifests {
 		if !shouldCreatePR(manifest, version) {
@@ -67,11 +82,7 @@ func (f *Flow) process(ctx context.Context, e cloudbuildevent.Event) error {
 		})
 	}
 
-	if err != nil {
-		f.notifyFalure(e, err.Error(), app)
-		return err
-	}
-	return f.notifyReleasePR(e, prs, app)
+	return prs
 }
 
 func shouldCreatePR(m Manifest, version string) bool {
@@ -134,7 +145,7 @@ func (f *Flow) createReleasePR(ctx context.Context, version string, a Applicatio
 	return *prURL, nil
 }
 
-func (f *Flow) notifyReleasePR(e cloudbuildevent.Event, prs PullRequests, app *Application) error {
+func (f *Flow) notifyReleasePR(image, version string, prs PullRequests, app *Application) error {
 	var prURL string
 
 	for _, pr := range prs {
@@ -149,25 +160,10 @@ func (f *Flow) notifyReleasePR(e cloudbuildevent.Event, prs PullRequests, app *A
 	d := slackbot.MessageDetail{
 		IsSuccess:  true,
 		IsPrNotify: true,
-		LogURL:     e.LogURL,
 		AppName:    app.Name,
-		Images:     e.Images,
-		TagName:    e.TagName,
-		BranchName: e.BranchName,
+		Image:      image,
+		Version:    version,
 		PrURL:      prURL,
-	}
-
-	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
-}
-
-func (f *Flow) notifyDeploy(e cloudbuildevent.Event) error {
-	d := slackbot.MessageDetail{
-		IsSuccess:  true,
-		IsPrNotify: false,
-		LogURL:     e.LogURL,
-		AppName:    *e.RepoName,
-		TagName:    e.TagName,
-		BranchName: e.BranchName,
 	}
 
 	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
@@ -176,8 +172,6 @@ func (f *Flow) notifyDeploy(e cloudbuildevent.Event) error {
 func (f *Flow) notifyFalure(e cloudbuildevent.Event, errorMessage string, app *Application) error {
 	d := slackbot.MessageDetail{
 		IsSuccess:    false,
-		LogURL:       e.LogURL,
-		Images:       e.Images,
 		ErrorMessage: errorMessage,
 		TagName:      e.TagName,
 		BranchName:   e.BranchName,
@@ -202,12 +196,20 @@ func getApplicationByEventRepoName(eventRepoName string) (*Application, error) {
 
 func getApplicationByEventTriggerID(eventTriggerID string) (*Application, error) {
 	for _, app := range cfg.ApplicationList {
-		// CloudBuild Repo Names
 		if eventTriggerID == app.TriggerID {
 			return &app, nil
 		}
 	}
 	return nil, errors.New("No application found for " + eventTriggerID)
+}
+
+func getApplicationByImage(image string) (*Application, error) {
+	for _, app := range cfg.ApplicationList {
+		if image == app.ImageName {
+			return &app, nil
+		}
+	}
+	return nil, errors.New("No application found for image " + image)
 }
 
 // Retrieve Docker Image tag from the built image
