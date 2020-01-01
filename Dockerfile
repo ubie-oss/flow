@@ -1,17 +1,16 @@
-FROM golang:1.11.1-alpine as build-env
+FROM golang:1.13 as go
+FROM gcr.io/distroless/base-debian10 as run
 
-ENV GO111MODULE on
+FROM go as build
+WORKDIR /go/src/github.com/sakajunquality/flow
 
-RUN apk add --update build-base gcc wget git
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
 
-WORKDIR /go/src/app
-ADD . /go/src/app
+COPY . .
+RUN go build -o /go/bin/flowd ./cmd/flowd
 
-RUN go get -d -v ./...
-RUN go build -o bin/flowd cmd/flowd/main.go
-
-FROM alpine
-RUN apk add --no-cache ca-certificates
-
-COPY --from=build-env /go/src/app/bin/flowd /usr/local/bin
+FROM run
+COPY --from=build /go/bin/flowd /usr/local/bin/flowd
 CMD ["flowd"]
