@@ -3,6 +3,8 @@ module github.com/sakajunquality/flow
 require (
 	cloud.google.com/go v0.30.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/go-chi/chi v4.0.2+incompatible
+	github.com/go-chi/render v1.0.1
 	github.com/google/go-cmp v0.2.0 // indirect
 	github.com/google/go-github/v18 v18.2.0
 	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
@@ -12,7 +14,7 @@ require (
 	github.com/nlopes/slack v0.4.0
 	github.com/pkg/errors v0.8.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/sakajunquality/cloud-pubsub-events v0.0.0-20190117094524-e3828a247582
+	github.com/sakajunquality/cloud-pubsub-events v0.0.1
 	github.com/stretchr/testify v1.2.2 // indirect
 	go.opencensus.io v0.17.0 // indirect
 	golang.org/x/net v0.0.0-20181017193950-04a2e542c03f // indirect
