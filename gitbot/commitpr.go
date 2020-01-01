@@ -24,14 +24,26 @@ func (r *Release) getRef() (ref *github.Reference, err error) {
 func (r *Release) getTree(ref *github.Reference) (tree *github.Tree, err error) {
 	entries := []github.TreeEntry{}
 
-	// Load each file into the tree.
+ChangeLoop:
 	for _, c := range r.Changes {
-		content, err := r.getChangedContent(c, r.Repo.baseBranch)
+		// check if entry exists
+		for i, e := range entries {
+			if c.filePath != e.GetPath() {
+				continue
+			}
+
+			content := e.GetContent()
+			entries[i].Content = github.String(getChangedText(content, c.regexText, c.changedText))
+			continue ChangeLoop // exit to the begining
+		}
+
+		// new entries
+		content, err := r.getOriginalContent(c.filePath, r.Repo.baseBranch)
 		if err != nil {
 			return nil, err
 		}
-
-		entries = append(entries, github.TreeEntry{Path: github.String(c.filePath), Type: github.String("blob"), Content: github.String(content), Mode: github.String("100644")})
+		changed := github.String(getChangedText(content, c.regexText, c.changedText))
+		entries = append(entries, github.TreeEntry{Path: github.String(c.filePath), Type: github.String("blob"), Content: changed, Mode: github.String("100644")})
 	}
 
 	tree, _, err = client.Git.CreateTree(r.ctx, r.sourceOwner, r.sourceRepo, *ref.Object.SHA, entries)
@@ -76,22 +88,21 @@ func (r *Release) createPR() (*string, error) {
 	return github.String(pr.GetHTMLURL()), nil
 }
 
-func (r *Release) getChangedContent(c Change, baseBranch string) (string, error) {
+func (r *Release) getOriginalContent(filePath, baseBranch string) (string, error) {
 	opt := &github.RepositoryContentGetOptions{
 		Ref: baseBranch,
 	}
 
-	f, _, _, err := client.Repositories.GetContents(r.ctx, r.sourceOwner, r.sourceRepo, c.filePath, opt)
+	f, _, _, err := client.Repositories.GetContents(r.ctx, r.sourceOwner, r.sourceRepo, filePath, opt)
 
 	if err != nil {
 		return "", err
 	}
 
-	original, err := f.GetContent()
-	if err != nil {
-		return "", err
-	}
+	return f.GetContent()
+}
 
-	re := regexp.MustCompile(c.regexText)
-	return re.ReplaceAllString(original, c.changedText), nil
+func getChangedText(original, regex, changed string) string {
+	re := regexp.MustCompile(regex)
+	return re.ReplaceAllString(original, changed)
 }
