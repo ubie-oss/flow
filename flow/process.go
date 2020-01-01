@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
-	"github.com/sakajunquality/cloud-pubsub-events/cloudbuildevent"
 	"github.com/sakajunquality/flow/gitbot"
 	"github.com/sakajunquality/flow/slackbot"
 )
@@ -18,34 +16,6 @@ type PullRequest struct {
 	env string
 	url string
 	err error
-}
-
-func (f *Flow) process(ctx context.Context, e cloudbuildevent.Event) error {
-	if !e.IsFinished() { // Notify only the finished
-		fmt.Fprintf(os.Stdout, "Build hasn't finished\n")
-		return nil
-	}
-
-	if e.TriggerID == nil {
-		return errors.New("Only the triggered build is supported")
-	}
-
-	app, err := getApplicationByEventTriggerID(*e.TriggerID)
-	if err != nil {
-		return fmt.Errorf("No app is configured for %s", *e.TriggerID)
-	}
-
-	if !e.IsSuuccess() { // CloudBuild Failure
-		return f.notifyFalure(e, "", nil)
-	}
-
-	version, err := getVersionFromImage(e.Images)
-	if err != nil {
-		return f.notifyFalure(e, fmt.Sprintf("Could not ditermine version from image: %s", err), nil)
-	}
-
-	prs := f.generatePRs(ctx, app, version)
-	return f.notifyReleasePR(e.Images[0], version, prs, app)
 }
 
 func (f *Flow) processImage(ctx context.Context, image, version string) error {
@@ -122,7 +92,7 @@ func (f *Flow) createReleasePR(ctx context.Context, version string, a Applicatio
 	release := gitbot.NewRelease(*repo, a.Name, m.Env, version, prBody)
 
 	for _, filePath := range m.Files {
-		release.AddChanges(filePath, fmt.Sprintf("%s:.*", a.ImageName), fmt.Sprintf("%s:%s", a.ImageName, version))
+		release.AddChanges(filePath, fmt.Sprintf("%s:.*", a.Image), fmt.Sprintf("%s:%s", a.Image, version))
 		if a.RewriteVersion {
 			release.AddChanges(filePath, "version: .*", fmt.Sprintf("version: %s", version))
 		}
@@ -134,8 +104,6 @@ func (f *Flow) createReleasePR(ctx context.Context, version string, a Applicatio
 
 	// Add Commit Author
 	release.AddAuthor(cfg.GitAuthor.Name, cfg.GitAuthor.Email)
-
-	fmt.Printf("%#v", release)
 
 	// Create a release PullRequest
 	prURL, err := release.Create(ctx, f.githubToken)
@@ -169,21 +137,6 @@ func (f *Flow) notifyReleasePR(image, version string, prs PullRequests, app *App
 	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
 }
 
-func (f *Flow) notifyFalure(e cloudbuildevent.Event, errorMessage string, app *Application) error {
-	d := slackbot.MessageDetail{
-		IsSuccess:    false,
-		ErrorMessage: errorMessage,
-		TagName:      e.TagName,
-		BranchName:   e.BranchName,
-	}
-
-	if app != nil {
-		d.AppName = app.Name
-	}
-
-	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
-}
-
 func getApplicationByEventRepoName(eventRepoName string) (*Application, error) {
 	for _, app := range cfg.ApplicationList {
 		// CloudBuild Repo Names
@@ -194,30 +147,11 @@ func getApplicationByEventRepoName(eventRepoName string) (*Application, error) {
 	return nil, errors.New("No application found for " + eventRepoName)
 }
 
-func getApplicationByEventTriggerID(eventTriggerID string) (*Application, error) {
-	for _, app := range cfg.ApplicationList {
-		if eventTriggerID == app.TriggerID {
-			return &app, nil
-		}
-	}
-	return nil, errors.New("No application found for " + eventTriggerID)
-}
-
 func getApplicationByImage(image string) (*Application, error) {
 	for _, app := range cfg.ApplicationList {
-		if image == app.ImageName {
+		if image == app.Image {
 			return &app, nil
 		}
 	}
 	return nil, errors.New("No application found for image " + image)
-}
-
-// Retrieve Docker Image tag from the built image
-func getVersionFromImage(images []string) (string, error) {
-	if len(images) < 1 {
-		return "", errors.New("no images found")
-	}
-	// does not support multiple images
-	tags := strings.Split(images[0], ":")
-	return tags[1], nil
 }

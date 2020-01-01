@@ -1,12 +1,11 @@
 applications:
   - name: example
-    trigger_id: xxxxxxxxxxxxxxxx
+    image_tag: gcr.io/$PROJECT_ID/foo
     source_owner: sakajunquality
     source_name: example-app
     manifest_owner: sakajunquality
     manifest_name: example-deployment
     manifest_base_branch: master
-    image_tag: gcr.io/$PROJECT_ID/hoge
     manifests:
       - env: dev
         files:

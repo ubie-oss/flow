@@ -43,35 +43,6 @@ func New(c *Config) (*Flow, error) {
 	return f, nil
 }
 
-func (f *Flow) Start(ctx context.Context, errCh chan error) {
-	pubsubClient, err := pubsub.NewClient(ctx, f.projectID)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating pubsub client: %v.\n", err)
-	}
-
-	// Create Cloud Pub/Sub topic if not exist
-	topic := pubsubClient.Topic(pubsubTopicID)
-	exists, err := topic.Exists(ctx)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error checking for topic: %v.\n", err)
-
-	}
-
-	// Create topic subscription
-	subscription = pubsubClient.Subscription(subName)
-	exists, err = subscription.Exists(ctx)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error checking for subscription: %v.\n", err)
-	}
-	if !exists {
-		if _, err = pubsubClient.CreateSubscription(ctx, subName, pubsub.SubscriptionConfig{Topic: topic}); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create subscription: %v.\n", err)
-		}
-	}
-
-	go f.subscribe(ctx, errCh)
-}
-
 func (f *Flow) ProcessGCREvent(ctx context.Context, e gcrevent.Event) error {
 	if e.Action != gcrevent.ActionInsert {
 		return nil

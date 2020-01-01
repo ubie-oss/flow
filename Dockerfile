@@ -9,10 +9,8 @@ COPY go.sum .
 RUN go mod download
 
 COPY . .
-RUN go build -o /go/bin/flowd ./cmd/flowd/main.go
-RUN go build -o /go/bin/server ./cmd/server/main.go
+RUN go build -o /go/bin/server 
 
 FROM run
-COPY --from=build /go/bin/flowd /usr/local/bin/flowd
 COPY --from=build /go/bin/server /usr/local/bin/server
 CMD ["server"]
