@@ -18,7 +18,7 @@ type Application struct {
 	RewriteVersion bool `yaml:"rewrite_version"`
 	RewriteNewTag  bool `yaml:"rewrite_new_tag"`
 
-	Image     string     `yaml:"image_tag"`
+	Image     string     `yaml:"image"`
 	Manifests []Manifest `yaml:"manifests"`
 }
 
