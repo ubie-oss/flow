@@ -56,6 +56,14 @@ func (f *Flow) generatePRs(ctx context.Context, app *Application, version string
 }
 
 func shouldCreatePR(m Manifest, version string) bool {
+	if version == "" {
+		return false
+	}
+	// ignore latest tag
+	if version == "latest" {
+		return false
+	}
+
 	for _, prefix := range m.Filters.ExcludePrefixes {
 		if strings.HasPrefix(version, prefix) {
 			return false
