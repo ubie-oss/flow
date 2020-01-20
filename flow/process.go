@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/sakajunquality/flow/gitbot"
@@ -52,14 +53,14 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 
 		err := release.Commit(ctx, client)
 		if err != nil {
-			// TODO log
+			log.Printf("Error Commiting: %s", err)
 			continue
 		}
 
 		if !manifest.CommitWithoutPR {
 			url, err := release.CreatePR(ctx, client)
 			if err != nil {
-				// TODO log
+				log.Printf("Error Submitting PR: %s", err)
 				continue
 			}
 			prs = append(prs, PullRequest{

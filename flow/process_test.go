@@ -39,8 +39,47 @@ func TestNewRelease(t *testing.T) {
 }
 
 func TestShouldProcess(t *testing.T) {
+	// ignore empty and latest
 	assert.Equal(t, false, shouldProcess(Manifest{}, ""))
 	assert.Equal(t, false, shouldProcess(Manifest{}, "latest"))
 
-	// @todo test filters
+	// usual tag
+	assert.Equal(t, true, shouldProcess(Manifest{}, "foo"))
+
+	// test include prefix
+	m1 := Manifest{
+		Filters: Filters{
+			IncludePrefixes: []string{
+				"v",
+			},
+		},
+	}
+	assert.Equal(t, true, shouldProcess(m1, "v123"))
+	assert.Equal(t, false, shouldProcess(m1, "release-foo"))
+
+	// test exclude prefix
+	m2 := Manifest{
+		Filters: Filters{
+			ExcludePrefixes: []string{
+				"v",
+			},
+		},
+	}
+	assert.Equal(t, false, shouldProcess(m2, "v123"))
+	assert.Equal(t, true, shouldProcess(m2, "release-foo"))
+
+	// mixed
+	m3 := Manifest{
+		Filters: Filters{
+			IncludePrefixes: []string{
+				"v",
+			},
+			ExcludePrefixes: []string{
+				"vv",
+			},
+		},
+	}
+	assert.Equal(t, true, shouldProcess(m3, "v123"))
+	assert.Equal(t, false, shouldProcess(m3, "vv123"))
+	assert.Equal(t, false, shouldProcess(m3, "release-foo"))
 }
