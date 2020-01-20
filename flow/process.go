@@ -37,7 +37,7 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 			continue
 		}
 
-		release := newRelease(app, manifest, version)
+		release := newRelease(*app, manifest, version)
 
 		for _, filePath := range manifest.Files {
 			release.AddChanges(filePath, fmt.Sprintf("%s:.*", app.Image), fmt.Sprintf("%s:%s", app.Image, version))
