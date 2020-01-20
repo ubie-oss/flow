@@ -6,7 +6,6 @@ require (
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-chi/render v1.0.1
 	github.com/google/go-cmp v0.2.0 // indirect
-	github.com/google/go-github/v20 v20.0.0 // indirect
 	github.com/google/go-github/v29 v29.0.2
 	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
 	github.com/gorilla/websocket v1.4.0 // indirect

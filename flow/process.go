@@ -123,8 +123,8 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 
 	return &gitbot.Release{
 		Repo: gitbot.Repo{
-			SourceOwner:  app.SourceOwner,
-			SourceRepo:   app.SourceName,
+			SourceOwner:  app.ManifestOwner,
+			SourceRepo:   app.ManifestName,
 			BaseBranch:   baseBranch,
 			CommitBranch: commitBranch,
 		},

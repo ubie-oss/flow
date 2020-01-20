@@ -24,18 +24,41 @@ func TestNewRelease(t *testing.T) {
 	version := "bar"
 
 	r := newRelease(app, manifest, version)
+	assert.Equal(t, "release/production-bar", r.Message)
 	assert.Equal(t, "release/production-bar", r.CommitBranch)
 	assert.Equal(t, "master", r.BaseBranch)
 
 	manifest.BaseBranch = "production"
 	r2 := newRelease(app, manifest, version)
+	assert.Equal(t, "release/production-bar", r2.Message)
 	assert.Equal(t, "release/production-bar", r2.CommitBranch)
 	assert.Equal(t, "production", r2.BaseBranch)
 
 	manifest.CommitWithoutPR = true
 	r3 := newRelease(app, manifest, version)
+	assert.Equal(t, "release/production-bar", r3.Message)
 	assert.Equal(t, "production", r3.CommitBranch)
 	assert.Equal(t, "production", r3.BaseBranch)
+
+	app2 := Application{
+		Name: "foo",
+	}
+	manifest2 := Manifest{
+		Env:        "dev",
+		BaseBranch: "dev",
+	}
+
+	r4 := newRelease(app2, manifest2, version)
+	assert.Equal(t, "release/dev-bar", r4.Message)
+	assert.Equal(t, "release/dev-bar", r4.CommitBranch)
+	assert.Equal(t, "dev", r4.BaseBranch)
+
+	manifest2.CommitWithoutPR = true
+	r5 := newRelease(app2, manifest2, version)
+	assert.Equal(t, "release/dev-bar", r5.Message)
+	assert.Equal(t, "dev", r5.CommitBranch)
+	assert.Equal(t, "dev", r5.BaseBranch)
+
 }
 
 func TestShouldProcess(t *testing.T) {

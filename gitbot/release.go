@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/google/go-github/v29/github"
+
 	"golang.org/x/oauth2"
 )
 
