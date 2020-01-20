@@ -8,6 +8,8 @@ applications:
     manifest_base_branch: master
     manifests:
       - env: dev
+        branch: dev
+        commit_without_pr: true
         files:
           - overlays/dev/deployment.yaml
       - env: qa

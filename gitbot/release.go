@@ -3,36 +3,30 @@ package gitbot
 import (
 	"context"
 	"errors"
-	"fmt"
 
-	"github.com/google/go-github/v18/github"
+	"github.com/google/go-github/v29/github"
+
 	"golang.org/x/oauth2"
 )
 
 type Release struct {
-	ctx context.Context
 	Repo
 	Author
-	PullRequest
 	Changes []Change
+	Message string
+	Body    string
 }
 
 type Repo struct {
-	sourceOwner string
-	sourceRepo  string
-	baseBranch  string
-}
-
-type PullRequest struct {
-	commitBranch  string
-	commitMessage string
-	prTitle       string
-	prBody        string
+	SourceOwner  string
+	SourceRepo   string
+	BaseBranch   string
+	CommitBranch string
 }
 
 type Author struct {
-	authorName  string
-	authorEmail string
+	Name  string
+	Email string
 }
 
 type Change struct {
@@ -41,35 +35,10 @@ type Change struct {
 	changedText string
 }
 
-var client *github.Client
-
-func NewRepo(sourceOwner, sourceRepo, baseBranch string) *Repo {
-	return &Repo{
-		sourceOwner: sourceOwner,
-		sourceRepo:  sourceRepo,
-		baseBranch:  baseBranch,
-	}
-}
-
-// NewRelease is ...
-func NewRelease(repo Repo, appName, appEnv, appVersion, prBody string) *Release {
-	branch := fmt.Sprintf("release/%s-%s", appEnv, appVersion)
-	subject := fmt.Sprintf("%s %s Release", appEnv, appVersion)
-
-	return &Release{
-		Repo: repo,
-		PullRequest: PullRequest{
-			commitBranch:  branch,
-			commitMessage: subject,
-			prTitle:       subject,
-			prBody:        prBody,
-		},
-	}
-}
-
-func (r *Release) AddAuthor(authorName, authorEmail string) {
-	r.Author.authorName = authorName
-	r.Author.authorEmail = authorEmail
+func NewGitHubClient(ctx context.Context, token string) *github.Client {
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	tc := oauth2.NewClient(ctx, ts)
+	return github.NewClient(tc)
 }
 
 func (r *Release) AddChanges(filePath, regexText, changedText string) {
@@ -80,28 +49,23 @@ func (r *Release) AddChanges(filePath, regexText, changedText string) {
 	})
 }
 
-func (r *Release) Create(ctx context.Context, token string) (*string, error) {
-	r.ctx = ctx
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	tc := oauth2.NewClient(ctx, ts)
-	client = github.NewClient(tc)
-
-	ref, err := r.getRef()
+func (r *Release) Commit(ctx context.Context, client *github.Client) error {
+	ref, err := r.getRef(ctx, client)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if ref == nil {
-		return nil, errors.New("git reference was nil ")
+		return errors.New("git reference was nil ")
 	}
 
-	tree, err := r.getTree(ref)
+	tree, err := r.getTree(ctx, client, ref)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if err := r.pushCommit(ref, tree); err != nil {
-		return nil, err
-	}
+	return r.pushCommit(ctx, client, ref, tree)
+}
 
-	return r.createPR()
+func (r *Release) CreatePR(ctx context.Context, client *github.Client) (*string, error) {
+	return r.createPR(ctx, client)
 }

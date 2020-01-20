@@ -23,11 +23,12 @@ type Application struct {
 }
 
 type Manifest struct {
-	Env        string   `yaml:"env"`
-	Files      []string `yaml:"files"`
-	Filters    Filters  `yaml:"filters"`
-	PRBody     string   `yaml:"pr_body"`
-	BaseBranch string   `yaml:"base_branch"`
+	Env             string   `yaml:"env"`
+	Files           []string `yaml:"files"`
+	Filters         Filters  `yaml:"filters"`
+	PRBody          string   `yaml:"pr_body"`
+	BaseBranch      string   `yaml:"base_branch"`
+	CommitWithoutPR bool     `yaml:"commit_without_pr"`
 }
 
 type Filters struct {
