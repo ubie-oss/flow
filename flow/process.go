@@ -37,41 +37,7 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 			continue
 		}
 
-		message := fmt.Sprintf("release/%s-%s", manifest.Env, version)
-
-		// Use base a branch configured in app level
-		baseBranch := app.ManifestBaseBranch
-		// If a branch is specified in each manifest use it
-		if manifest.BaseBranch != "" {
-			baseBranch = manifest.BaseBranch
-		}
-
-		// Commit in a new branch by default
-		commitBranch := message
-		// If manifest should be commited without a PR, commit to baseBranch
-		if manifest.CommitWithoutPR {
-			commitBranch = baseBranch
-		}
-
-		body := fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s", app.SourceOwner, app.SourceName, version)
-		if manifest.PRBody != "" {
-			body += fmt.Sprintf("\n\n%s", manifest.PRBody)
-		}
-
-		release := &gitbot.Release{
-			Repo: gitbot.Repo{
-				SourceOwner:  app.SourceOwner,
-				SourceRepo:   app.SourceName,
-				BaseBranch:   baseBranch,
-				CommitBranch: commitBranch,
-			},
-			Author: gitbot.Author{
-				Name:  cfg.GitAuthor.Name,
-				Email: cfg.GitAuthor.Email,
-			},
-			Message: message,
-			Body:    body,
-		}
+		release := newRelease(app, manifest, version)
 
 		for _, filePath := range manifest.Files {
 			release.AddChanges(filePath, fmt.Sprintf("%s:.*", app.Image), fmt.Sprintf("%s:%s", app.Image, version))
@@ -132,6 +98,44 @@ func shouldProcess(m Manifest, version string) bool {
 	return false
 }
 
+func newRelease(app Application, manifest Manifest, version string) *gitbot.Release {
+	message := fmt.Sprintf("release/%s-%s", manifest.Env, version)
+
+	// Use base a branch configured in app level
+	baseBranch := app.ManifestBaseBranch
+	// If a branch is specified in each manifest use it
+	if manifest.BaseBranch != "" {
+		baseBranch = manifest.BaseBranch
+	}
+
+	// Commit in a new branch by default
+	commitBranch := message
+	// If manifest should be commited without a PR, commit to baseBranch
+	if manifest.CommitWithoutPR {
+		commitBranch = baseBranch
+	}
+
+	body := fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s", app.SourceOwner, app.SourceName, version)
+	if manifest.PRBody != "" {
+		body += fmt.Sprintf("\n\n%s", manifest.PRBody)
+	}
+
+	return &gitbot.Release{
+		Repo: gitbot.Repo{
+			SourceOwner:  app.SourceOwner,
+			SourceRepo:   app.SourceName,
+			BaseBranch:   baseBranch,
+			CommitBranch: commitBranch,
+		},
+		Author: gitbot.Author{
+			Name:  cfg.GitAuthor.Name,
+			Email: cfg.GitAuthor.Email,
+		},
+		Message: message,
+		Body:    body,
+	}
+}
+
 func (f *Flow) notifyReleasePR(image, version string, prs PullRequests, app *Application) error {
 	var prURL string
 
@@ -155,16 +159,6 @@ func (f *Flow) notifyReleasePR(image, version string, prs PullRequests, app *App
 
 	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
 }
-
-// func getApplicationByEventRepoName(eventRepoName string) (*Application, error) {
-// 	for _, app := range cfg.ApplicationList {
-// 		// CloudBuild Repo Names
-// 		if eventRepoName == fmt.Sprintf("github-%s-%s", app.SourceOwner, app.SourceName) {
-// 			return &app, nil
-// 		}
-// 	}
-// 	return nil, errors.New("No application found for " + eventRepoName)
-// }
 
 func getApplicationByImage(image string) (*Application, error) {
 	for _, app := range cfg.ApplicationList {
