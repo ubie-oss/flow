@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/google/go-github/v18/github"
+	"github.com/google/go-github/v29/github"
 	"golang.org/x/oauth2"
 )
 
