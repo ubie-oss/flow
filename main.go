@@ -16,6 +16,8 @@ import (
 	"github.com/sakajunquality/flow/flow"
 
 	"gopkg.in/yaml.v2"
+
+	_ "github.com/GoogleCloudPlatform/berglas/pkg/auto"
 )
 
 // Response is a HTTP response
