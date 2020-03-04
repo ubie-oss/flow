@@ -100,7 +100,7 @@ func shouldProcess(m Manifest, version string) bool {
 }
 
 func newRelease(app Application, manifest Manifest, version string) *gitbot.Release {
-	branchname := getBranchName(app, manifest, version)
+	branchName := getBranchName(app, manifest, version)
 	message := getCommitMessage(app, manifest, version)
 
 	// Use base a branch configured in app level
@@ -111,7 +111,7 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 	}
 
 	// Commit in a new branch by default
-	commitBranch := branchname
+	commitBranch := branchName
 	// If manifest should be commited without a PR, commit to baseBranch
 	if manifest.CommitWithoutPR {
 		commitBranch = baseBranch
