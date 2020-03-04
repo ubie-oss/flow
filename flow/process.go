@@ -100,7 +100,8 @@ func shouldProcess(m Manifest, version string) bool {
 }
 
 func newRelease(app Application, manifest Manifest, version string) *gitbot.Release {
-	message := fmt.Sprintf("release/%s-%s", manifest.Env, version)
+	branchName := getBranchName(app, manifest, version)
+	message := getCommitMessage(app, manifest, version)
 
 	// Use base a branch configured in app level
 	baseBranch := app.ManifestBaseBranch
@@ -110,7 +111,7 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 	}
 
 	// Commit in a new branch by default
-	commitBranch := message
+	commitBranch := branchName
 	// If manifest should be commited without a PR, commit to baseBranch
 	if manifest.CommitWithoutPR {
 		commitBranch = baseBranch
@@ -135,6 +136,40 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 		Message: message,
 		Body:    body,
 	}
+}
+
+func getBranchName(a Application, m Manifest, version string) string {
+	branch := "release/"
+	branch += m.Env
+
+	repo := a.SourceName
+	if m.ShowSourceOwner {
+		repo = fmt.Sprintf("%s-%s", a.SourceOwner, repo)
+	}
+
+	if m.ShowSourceName {
+		branch += "-" + repo
+	}
+
+	branch += "-" + version
+	return branch
+}
+
+func getCommitMessage(a Application, m Manifest, version string) string {
+	message := "Release"
+	message += " " + m.Env
+
+	repo := a.SourceName
+	if m.ShowSourceOwner {
+		repo = fmt.Sprintf("%s/%s", a.SourceOwner, repo)
+	}
+
+	if m.ShowSourceName {
+		message += " " + repo
+	}
+
+	message += " " + version
+	return message
 }
 
 func (f *Flow) notifyReleasePR(image, version string, prs PullRequests, app *Application) error {
