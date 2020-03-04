@@ -24,6 +24,8 @@ type Application struct {
 
 type Manifest struct {
 	Env             string   `yaml:"env"`
+	ShowSourceOwner bool     `yaml:"show_source_owner"`
+	ShowSourceName  bool     `yaml:"show_source_name"`
 	Files           []string `yaml:"files"`
 	Filters         Filters  `yaml:"filters"`
 	PRBody          string   `yaml:"pr_body"`
