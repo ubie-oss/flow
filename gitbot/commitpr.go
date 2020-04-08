@@ -2,6 +2,7 @@ package gitbot
 
 import (
 	"context"
+	"log"
 	"regexp"
 	"time"
 
@@ -86,7 +87,17 @@ func (r *Release) createPR(ctx context.Context, client *github.Client) (*string,
 		return nil, err
 	}
 
+	err = r.addLabels(ctx, client, *pr.Number)
+	if err != nil {
+		log.Printf("Error Adding Lables: %s", err)
+	}
+
 	return github.String(pr.GetHTMLURL()), nil
+}
+
+func (r *Release) addLabels(ctx context.Context, client *github.Client, prNumber int) error {
+	_, _, err := client.Issues.AddLabelsToIssue(ctx, r.SourceOwner, r.SourceRepo, prNumber, r.Labels)
+	return err
 }
 
 func (r *Release) getOriginalContent(ctx context.Context, client *github.Client, filePath, baseBranch string) (string, error) {
