@@ -31,6 +31,7 @@ type Manifest struct {
 	PRBody          string   `yaml:"pr_body"`
 	BaseBranch      string   `yaml:"base_branch"`
 	CommitWithoutPR bool     `yaml:"commit_without_pr"`
+	Labels          []string `yaml:"labels"`
 }
 
 type Filters struct {

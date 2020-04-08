@@ -5,8 +5,6 @@ import (
 	"errors"
 
 	"github.com/google/go-github/v29/github"
-
-	"golang.org/x/oauth2"
 )
 
 type Release struct {
@@ -15,6 +13,7 @@ type Release struct {
 	Changes []Change
 	Message string
 	Body    string
+	Labels  []string
 }
 
 type Repo struct {
@@ -33,12 +32,6 @@ type Change struct {
 	filePath    string
 	regexText   string
 	changedText string
-}
-
-func NewGitHubClient(ctx context.Context, token string) *github.Client {
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	tc := oauth2.NewClient(ctx, ts)
-	return github.NewClient(tc)
 }
 
 func (r *Release) AddChanges(filePath, regexText, changedText string) {

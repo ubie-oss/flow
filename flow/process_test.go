@@ -16,6 +16,7 @@ func TestNewRelease(t *testing.T) {
 
 	app := Application{
 		Name:               "foo",
+		SourceName:         "alice",
 		ManifestBaseBranch: "master",
 	}
 	manifest := Manifest{
@@ -27,18 +28,21 @@ func TestNewRelease(t *testing.T) {
 	assert.Equal(t, "Release production bar", r.Message)
 	assert.Equal(t, "release/production-bar", r.CommitBranch)
 	assert.Equal(t, "master", r.BaseBranch)
+	assert.Equal(t, []string{"alice", "production"}, r.Labels)
 
 	manifest.BaseBranch = "production"
 	r2 := newRelease(app, manifest, version)
 	assert.Equal(t, "Release production bar", r2.Message)
 	assert.Equal(t, "release/production-bar", r2.CommitBranch)
 	assert.Equal(t, "production", r2.BaseBranch)
+	assert.Equal(t, []string{"alice", "production"}, r2.Labels)
 
 	manifest.CommitWithoutPR = true
 	r3 := newRelease(app, manifest, version)
 	assert.Equal(t, "Release production bar", r3.Message)
 	assert.Equal(t, "production", r3.CommitBranch)
 	assert.Equal(t, "production", r3.BaseBranch)
+	assert.Equal(t, []string{"alice", "production"}, r3.Labels)
 
 	app2 := Application{
 		Name: "foo",
@@ -58,6 +62,10 @@ func TestNewRelease(t *testing.T) {
 	assert.Equal(t, "Release dev bar", r5.Message)
 	assert.Equal(t, "dev", r5.CommitBranch)
 	assert.Equal(t, "dev", r5.BaseBranch)
+
+	manifest2.Labels = []string{"bob"}
+	r6 := newRelease(app, manifest2, version)
+	assert.Equal(t, []string{"alice", "dev", "bob"}, r6.Labels)
 
 }
 

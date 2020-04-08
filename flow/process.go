@@ -122,6 +122,11 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 		body += fmt.Sprintf("\n\n%s", manifest.PRBody)
 	}
 
+	var labels []string
+	labels = append(labels, app.SourceName)
+	labels = append(labels, manifest.Env)
+	labels = append(labels, manifest.Labels...)
+
 	return &gitbot.Release{
 		Repo: gitbot.Repo{
 			SourceOwner:  app.ManifestOwner,
@@ -135,6 +140,7 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 		},
 		Message: message,
 		Body:    body,
+		Labels:  labels,
 	}
 }
 
