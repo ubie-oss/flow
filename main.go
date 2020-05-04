@@ -95,7 +95,14 @@ func handlePubSubMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	event, err := gcrevent.ParseMessage(m.Message.Data)
+	if err != nil {
+		log.Printf("gcrevent.ParseMessage: %v", err)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
 	err = f.ProcessGCREvent(ctx, event)
+	log.Printf("process: %v", err)
 
 	res := &Response{
 		Status: http.StatusOK,
