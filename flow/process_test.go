@@ -16,6 +16,7 @@ func TestNewRelease(t *testing.T) {
 
 	app := Application{
 		Name:               "foo",
+		SourceOwner:        "wonderland",
 		SourceName:         "alice",
 		ManifestBaseBranch: "master",
 	}
@@ -25,27 +26,29 @@ func TestNewRelease(t *testing.T) {
 	version := "bar"
 
 	r := newRelease(app, manifest, version)
-	assert.Equal(t, "Release production bar", r.Message)
-	assert.Equal(t, "release/production-bar", r.CommitBranch)
+	assert.Equal(t, "Rollout production alice bar", r.Message)
+	assert.Equal(t, "rollout/production-alice-bar", r.CommitBranch)
 	assert.Equal(t, "master", r.BaseBranch)
 	assert.Equal(t, []string{"alice", "production"}, r.Labels)
 
 	manifest.BaseBranch = "production"
 	r2 := newRelease(app, manifest, version)
-	assert.Equal(t, "Release production bar", r2.Message)
-	assert.Equal(t, "release/production-bar", r2.CommitBranch)
+	assert.Equal(t, "Rollout production alice bar", r2.Message)
+	assert.Equal(t, "rollout/production-alice-bar", r2.CommitBranch)
 	assert.Equal(t, "production", r2.BaseBranch)
 	assert.Equal(t, []string{"alice", "production"}, r2.Labels)
 
 	manifest.CommitWithoutPR = true
 	r3 := newRelease(app, manifest, version)
-	assert.Equal(t, "Release production bar", r3.Message)
+	assert.Equal(t, "Rollout production alice bar", r3.Message)
 	assert.Equal(t, "production", r3.CommitBranch)
 	assert.Equal(t, "production", r3.BaseBranch)
 	assert.Equal(t, []string{"alice", "production"}, r3.Labels)
 
 	app2 := Application{
-		Name: "foo",
+		Name:        "foo",
+		SourceOwner: "abc",
+		SourceName:  "123",
 	}
 	manifest2 := Manifest{
 		Env:        "dev",
@@ -53,13 +56,13 @@ func TestNewRelease(t *testing.T) {
 	}
 
 	r4 := newRelease(app2, manifest2, version)
-	assert.Equal(t, "Release dev bar", r4.Message)
-	assert.Equal(t, "release/dev-bar", r4.CommitBranch)
+	assert.Equal(t, "Rollout dev 123 bar", r4.Message)
+	assert.Equal(t, "rollout/dev-123-bar", r4.CommitBranch)
 	assert.Equal(t, "dev", r4.BaseBranch)
 
 	manifest2.CommitWithoutPR = true
 	r5 := newRelease(app2, manifest2, version)
-	assert.Equal(t, "Release dev bar", r5.Message)
+	assert.Equal(t, "Rollout dev 123 bar", r5.Message)
 	assert.Equal(t, "dev", r5.CommitBranch)
 	assert.Equal(t, "dev", r5.BaseBranch)
 
@@ -125,11 +128,11 @@ func TestGetBranchName(t *testing.T) {
 	}
 	version := "v0.0.0"
 
-	assert.Equal(t, "release/prod-v0.0.0", getBranchName(app, manifest, version))
-	manifest.ShowSourceName = true
-	assert.Equal(t, "release/prod-bar-v0.0.0", getBranchName(app, manifest, version))
+	assert.Equal(t, "rollout/prod-bar-v0.0.0", getBranchName(app, manifest, version))
 	manifest.ShowSourceOwner = true
-	assert.Equal(t, "release/prod-foo-inc-bar-v0.0.0", getBranchName(app, manifest, version))
+	assert.Equal(t, "rollout/prod-foo-inc-bar-v0.0.0", getBranchName(app, manifest, version))
+	manifest.HideSourceName = true
+	assert.Equal(t, "rollout/prod-v0.0.0", getBranchName(app, manifest, version))
 }
 
 func TestGetCommitMessage(t *testing.T) {
@@ -142,9 +145,9 @@ func TestGetCommitMessage(t *testing.T) {
 	}
 	version := "v0.0.0"
 
-	assert.Equal(t, "Release prod v0.0.0", getCommitMessage(app, manifest, version))
-	manifest.ShowSourceName = true
-	assert.Equal(t, "Release prod bar v0.0.0", getCommitMessage(app, manifest, version))
+	assert.Equal(t, "Rollout prod bar v0.0.0", getCommitMessage(app, manifest, version))
 	manifest.ShowSourceOwner = true
-	assert.Equal(t, "Release prod foo-inc/bar v0.0.0", getCommitMessage(app, manifest, version))
+	assert.Equal(t, "Rollout prod foo-inc/bar v0.0.0", getCommitMessage(app, manifest, version))
+	manifest.HideSourceName = true
+	assert.Equal(t, "Rollout prod v0.0.0", getCommitMessage(app, manifest, version))
 }
