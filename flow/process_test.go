@@ -15,7 +15,6 @@ func TestNewRelease(t *testing.T) {
 	}
 
 	app := Application{
-		Name:               "foo",
 		SourceOwner:        "wonderland",
 		SourceName:         "alice",
 		ManifestBaseBranch: "master",
@@ -46,7 +45,6 @@ func TestNewRelease(t *testing.T) {
 	assert.Equal(t, []string{"alice", "production"}, r3.Labels)
 
 	app2 := Application{
-		Name:        "foo",
 		SourceOwner: "abc",
 		SourceName:  "123",
 	}
