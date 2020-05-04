@@ -145,7 +145,7 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 }
 
 func getBranchName(a Application, m Manifest, version string) string {
-	branch := "release/"
+	branch := "rollout/"
 	branch += m.Env
 
 	repo := a.SourceName
@@ -153,7 +153,7 @@ func getBranchName(a Application, m Manifest, version string) string {
 		repo = fmt.Sprintf("%s-%s", a.SourceOwner, repo)
 	}
 
-	if m.ShowSourceName {
+	if !m.HideSourceName {
 		branch += "-" + repo
 	}
 
@@ -162,7 +162,7 @@ func getBranchName(a Application, m Manifest, version string) string {
 }
 
 func getCommitMessage(a Application, m Manifest, version string) string {
-	message := "Release"
+	message := "Rollout"
 	message += " " + m.Env
 
 	repo := a.SourceName
@@ -170,7 +170,7 @@ func getCommitMessage(a Application, m Manifest, version string) string {
 		repo = fmt.Sprintf("%s/%s", a.SourceOwner, repo)
 	}
 
-	if m.ShowSourceName {
+	if !m.HideSourceName {
 		message += " " + repo
 	}
 
