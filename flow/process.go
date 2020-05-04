@@ -42,9 +42,7 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 
 		for _, filePath := range manifest.Files {
 			release.AddChanges(filePath, fmt.Sprintf("%s:.*", app.Image), fmt.Sprintf("%s:%s", app.Image, version))
-			if app.RewriteVersion {
-				release.AddChanges(filePath, "version: .*", fmt.Sprintf("version: %s", version))
-			}
+			release.AddChanges(filePath, "version: .*", fmt.Sprintf("version: %s", version))
 
 			if app.RewriteNewTag && strings.Contains(filePath, "kustomization.yaml") {
 				release.AddChanges(filePath, "newTag: .*", fmt.Sprintf("newTag: %s", version))
