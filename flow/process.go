@@ -117,7 +117,11 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 		commitBranch = baseBranch
 	}
 
-	body := fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s", app.SourceOwner, app.SourceName, version)
+	var body string
+	if !manifest.HideSourceSourceDesc {
+		body += fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s", app.SourceOwner, app.SourceName, version)
+	}
+
 	if manifest.PRBody != "" {
 		body += fmt.Sprintf("\n\n%s", manifest.PRBody)
 	}
