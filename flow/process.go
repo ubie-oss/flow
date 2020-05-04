@@ -197,7 +197,7 @@ func (f *Flow) notifyReleasePR(image, version string, prs PullRequests, app *App
 	d := slackbot.MessageDetail{
 		IsSuccess:  true,
 		IsPrNotify: true,
-		AppName:    app.Name,
+		AppName:    fmt.Sprintf("%s/%s", app.SourceOwner, app.SourceName),
 		Image:      image,
 		Version:    version,
 		PrURL:      prURL,
