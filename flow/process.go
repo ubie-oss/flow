@@ -26,7 +26,14 @@ func (f *Flow) processImage(ctx context.Context, image, version string) error {
 	}
 
 	prs := f.process(ctx, app, version)
-	return f.notifyReleasePR(image, version, prs, app)
+
+	if len(prs) > 0 {
+		err = f.notifyReleasePR(image, version, prs, app)
+		if err != nil {
+			log.Printf("Error Notifying PR: %s", err)
+		}
+	}
+	return nil
 }
 
 func (f *Flow) process(ctx context.Context, app *Application, version string) PullRequests {
