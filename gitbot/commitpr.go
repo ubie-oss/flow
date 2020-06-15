@@ -23,36 +23,39 @@ func (r *Release) getRef(ctx context.Context, client *github.Client) (ref *githu
 	return ref, err
 }
 
-func (r *Release) getTree(ctx context.Context, client *github.Client, ref *github.Reference) (tree *github.Tree, err error) {
-	entries := []github.TreeEntry{}
+func (r *Release) getTree(ctx context.Context, client *github.Client, ref *github.Reference) (*github.Tree, error) {
+	// filePath:content map
+	entryMap := make(map[string]string)
 
-ChangeLoop:
 	for _, c := range r.Changes {
-		// check if entry exists
-		for i, e := range entries {
-			if c.filePath != e.GetPath() {
-				continue
-			}
-
-			content := e.GetContent()
-			entries[i].Content = github.String(getChangedText(content, c.regexText, c.changedText))
-			continue ChangeLoop // exit to the begining
+		// rewrite if target is already changed
+		content, ok := entryMap[c.filePath]
+		if ok {
+			entryMap[c.filePath] = getChangedText(content, c.regexText, c.changedText)
+			continue
 		}
 
-		// new entries
 		content, err := r.getOriginalContent(ctx, client, c.filePath, r.Repo.BaseBranch)
 		if err != nil {
-			return nil, err
+			log.Printf("Error fetching content %s", err)
+			continue
 		}
-		changed := github.String(getChangedText(content, c.regexText, c.changedText))
-		entries = append(entries, github.TreeEntry{Path: github.String(c.filePath), Type: github.String("blob"), Content: changed, Mode: github.String("100644")})
+
+		changed := getChangedText(content, c.regexText, c.changedText)
+		entryMap[c.filePath] = changed
 	}
 
-	tree, _, err = client.Git.CreateTree(ctx, r.SourceOwner, r.SourceRepo, *ref.Object.SHA, entries)
+	entries := []github.TreeEntry{}
+
+	for path, content := range entryMap {
+		entries = append(entries, github.TreeEntry{Path: github.String(path), Type: github.String("blob"), Content: github.String(content), Mode: github.String("100644")})
+	}
+
+	tree, _, err := client.Git.CreateTree(ctx, r.SourceOwner, r.SourceRepo, *ref.Object.SHA, entries)
 	return tree, err
 }
 
-func (r *Release) pushCommit(ctx context.Context, client *github.Client, ref *github.Reference, tree *github.Tree) (err error) {
+func (r *Release) pushCommit(ctx context.Context, client *github.Client, ref *github.Reference, tree *github.Tree) error {
 	parent, _, err := client.Repositories.GetCommit(ctx, r.SourceOwner, r.SourceRepo, *ref.Object.SHA)
 	if err != nil {
 		return err
