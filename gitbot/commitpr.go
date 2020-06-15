@@ -42,7 +42,8 @@ ChangeLoop:
 		// new entries
 		content, err := r.getOriginalContent(ctx, client, c.filePath, r.Repo.BaseBranch)
 		if err != nil {
-			return nil, err
+			log.Printf("Error fetching content %s", err)
+			continue
 		}
 		changed := github.String(getChangedText(content, c.regexText, c.changedText))
 		entries = append(entries, github.TreeEntry{Path: github.String(c.filePath), Type: github.String("blob"), Content: changed, Mode: github.String("100644")})
