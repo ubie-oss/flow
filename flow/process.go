@@ -54,6 +54,10 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 			if app.RewriteNewTag && strings.Contains(filePath, "kustomization.yaml") {
 				release.AddChanges(filePath, "newTag: .*", fmt.Sprintf("newTag: %s", version))
 			}
+
+			for _, key := range app.AdditionalRewriteKeys {
+				release.AddChanges(filePath, fmt.Sprintf("%s: .*", key), fmt.Sprintf("%s: %s", key, version))
+			}
 		}
 
 		err := release.Commit(ctx, client)
