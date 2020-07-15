@@ -142,6 +142,17 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 		body += fmt.Sprintf("\n\n%s", manifest.PRBody)
 	}
 
+	manifestOwner := cfg.DefaultManifestOwner
+	manifestName := cfg.DefaultManifestName
+
+	if app.ManifestOwner != "" {
+		manifestOwner = app.ManifestOwner
+	}
+
+	if app.ManifestName != "" {
+		manifestName = app.ManifestName
+	}
+
 	var labels []string
 	labels = append(labels, app.SourceName)
 	labels = append(labels, manifest.Env)
@@ -149,8 +160,8 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 
 	return &gitbot.Release{
 		Repo: gitbot.Repo{
-			SourceOwner:  app.ManifestOwner,
-			SourceRepo:   app.ManifestName,
+			SourceOwner:  manifestOwner,
+			SourceRepo:   manifestName,
 			BaseBranch:   baseBranch,
 			CommitBranch: commitBranch,
 		},

@@ -70,6 +70,35 @@ func TestNewRelease(t *testing.T) {
 
 }
 
+func TestNewReleaseForDefaultOrg(t *testing.T) {
+	cfg = &Config{
+		DefaultManifestOwner: "foo-inc",
+		DefaultManifestName:  "bar-repo",
+	}
+
+	app := Application{
+		SourceOwner:        "wonderland",
+		SourceName:         "alice",
+		ManifestBaseBranch: "master",
+	}
+	manifest := Manifest{
+		Env: "production",
+	}
+	version := "1234"
+
+	r := newRelease(app, manifest, version)
+
+	assert.Equal(t, "foo-inc", r.Repo.SourceOwner)
+	assert.Equal(t, "bar-repo", r.Repo.SourceRepo)
+
+	app.ManifestOwner = "abc-inc"
+	app.ManifestName = "xyz-repo"
+
+	r2 := newRelease(app, manifest, version)
+	assert.Equal(t, "abc-inc", r2.Repo.SourceOwner)
+	assert.Equal(t, "xyz-repo", r2.Repo.SourceRepo)
+}
+
 func TestShouldProcess(t *testing.T) {
 	// ignore empty and latest
 	assert.Equal(t, false, shouldProcess(Manifest{}, ""))
