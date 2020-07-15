@@ -58,6 +58,9 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 			for _, key := range app.AdditionalRewriteKeys {
 				release.AddChanges(filePath, fmt.Sprintf("%s: .*", key), fmt.Sprintf("%s: %s", key, version))
 			}
+			for _, prefix := range app.AdditionalRewritePrefix {
+				release.AddChanges(filePath, fmt.Sprintf("%s.*", prefix), fmt.Sprintf("%s%s", prefix, version))
+			}
 		}
 
 		err := release.Commit(ctx, client)
