@@ -4,6 +4,9 @@ type Config struct {
 	ApplicationList []Application `yaml:"applications"`
 	GitAuthor       GitAuthor     `yaml:"git_author"`
 
+	DefaultManifestOwner string `yaml:"default_manifest_owner"`
+	DefaultManifestName  string `yaml:"default_manifest_name"`
+
 	SlackNotifiyChannel string `yaml:"slack_notify_channel"`
 }
 
