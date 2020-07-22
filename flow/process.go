@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
-	retry "github.com/avast/retry-go"
 	"github.com/sakajunquality/flow/gitbot"
 	"github.com/sakajunquality/flow/slackbot"
+
+	retry "github.com/avast/retry-go"
 )
 
 const (
@@ -62,8 +63,7 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 				return release.Commit(ctx, client)
 			},
 			retry.DelayType(func(n uint, config *retry.Config) time.Duration {
-				fmt.Println(n)
-				return time.Duration(n) * time.Second
+				return time.Duration(3) * time.Second
 			}),
 			retry.Attempts(retryCommitTries),
 		)
