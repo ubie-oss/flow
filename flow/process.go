@@ -6,9 +6,15 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
+	retry "github.com/avast/retry-go"
 	"github.com/sakajunquality/flow/gitbot"
 	"github.com/sakajunquality/flow/slackbot"
+)
+
+const (
+	retryCommitTries = 3
 )
 
 type PullRequests []PullRequest
@@ -51,7 +57,17 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 			}
 		}
 
-		err := release.Commit(ctx, client)
+		err := retry.Do(
+			func() error {
+				return release.Commit(ctx, client)
+			},
+			retry.DelayType(func(n uint, config *retry.Config) time.Duration {
+				fmt.Println(n)
+				return time.Duration(n) * time.Second
+			}),
+			retry.Attempts(retryCommitTries),
+		)
+
 		if err != nil {
 			log.Printf("Error Commiting: %s", err)
 			continue
