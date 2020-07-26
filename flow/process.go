@@ -11,7 +11,7 @@ import (
 	"github.com/sakajunquality/flow/gitbot"
 	"github.com/sakajunquality/flow/slackbot"
 
-	retry "github.com/avast/retry-go"
+	"github.com/cenkalti/backoff/v4"
 )
 
 const (
@@ -58,17 +58,17 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 			}
 		}
 
-		err := retry.Do(
-			func() error {
-				return release.Commit(ctx, client)
-			},
-			retry.DelayType(func(n uint, config *retry.Config) time.Duration {
-				return time.Duration(3) * time.Second
-			}),
-			retry.Attempts(retryCommitTries),
-		)
+		backOffPolicy := backoff.NewExponentialBackOff()
+		backOffPolicy.MaxInterval = 3 * time.Second
+		backOffPolicy.MaxElapsedTime = 21 * time.Second
+
+		operation := func() error {
+			return release.Commit(ctx, client)
+		}
+		err := backoff.Retry(operation, backOffPolicy)
 
 		if err != nil {
+			// @TODO notify
 			log.Printf("Error Commiting: %s", err)
 			continue
 		}
@@ -76,6 +76,7 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 		if !manifest.CommitWithoutPR {
 			url, err := release.CreatePR(ctx, client)
 			if err != nil {
+				// @TODO notify
 				log.Printf("Error Submitting PR: %s", err)
 				continue
 			}
