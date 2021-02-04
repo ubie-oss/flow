@@ -1,8 +1,12 @@
 package flow
 
 import (
+	// "regexp"
+
+	"fmt"
 	"testing"
 
+	"github.com/dlclark/regexp2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -177,4 +181,63 @@ func TestGetCommitMessage(t *testing.T) {
 	assert.Equal(t, "Rollout prod foo-inc/bar v0.0.0", getCommitMessage(app, manifest, version))
 	manifest.HideSourceName = true
 	assert.Equal(t, "Rollout prod v0.0.0", getCommitMessage(app, manifest, version))
+}
+
+// test process() itself after refactoring
+func TestRegexTemplate(t *testing.T) {
+	const (
+		oldVersion = "oldoldold"
+		newVersion = "newnewnew"
+	)
+
+	// test imageRewriteRegexTemplate
+	const testImage = "gcr.io/foo/bar"
+	image := regexp2.MustCompile(fmt.Sprintf(imageRewriteRegexTemplate, testImage), 0)
+	r1, err := image.Replace(fmt.Sprintf("%s:%s", testImage, oldVersion), fmt.Sprintf("%s:%s", testImage, newVersion), 0, -1)
+	assert.Nil(t, err)
+	assert.Equal(t, r1, fmt.Sprintf("%s:%s", testImage, newVersion))
+
+	// test additionalRewriteKeysRegexTemplate
+	const testKey = "hogefuga"
+	rewriteKey := regexp2.MustCompile(fmt.Sprintf(additionalRewriteKeysRegexTemplate, testKey), 0)
+	r2, err := rewriteKey.Replace(fmt.Sprintf("%s: %s", testKey, oldVersion), fmt.Sprintf("%s: %s", testKey, newVersion), 0, -1)
+	assert.Nil(t, err)
+	assert.Equal(t, r2, fmt.Sprintf("%s: %s", testKey, newVersion))
+
+	// test additionalRewritePrefixRegexTemplate
+	const testPrefix = "-cprof_service_version="
+	rewritePrefix := regexp2.MustCompile(fmt.Sprintf(additionalRewritePrefixRegexTemplate, testPrefix), 0)
+	r3, err := rewritePrefix.Replace(fmt.Sprintf("%s%s", testPrefix, oldVersion), fmt.Sprintf("%s%s", testPrefix, newVersion), 0, -1)
+	assert.Nil(t, err)
+	assert.Equal(t, r3, fmt.Sprintf("%s%s", testPrefix, newVersion))
+}
+
+func TestVersionREwriteRegex(t *testing.T) {
+	change := "version: xyz"
+
+	original := `
+version: abc
+version: 123 # do-not-rewrite
+test:
+  foo:
+    bar:
+      version: abc
+	foo:
+      version: aiueo # no-rewrite
+`
+	expected := `
+version: xyz
+version: 123 # do-not-rewrite
+test:
+  foo:
+    bar:
+      version: xyz
+	foo:
+      version: aiueo # no-rewrite
+`
+	re := regexp2.MustCompile(versionRewriteRegex, 0)
+	result, err := re.Replace(original, change, 0, -1)
+
+	assert.Nil(t, err)
+	assert.Equal(t, expected, result)
 }

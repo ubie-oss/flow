@@ -3,9 +3,9 @@ package gitbot
 import (
 	"context"
 	"log"
-	"regexp"
 	"time"
 
+	"github.com/dlclark/regexp2"
 	"github.com/google/go-github/v29/github"
 )
 
@@ -118,6 +118,12 @@ func (r *Release) getOriginalContent(ctx context.Context, client *github.Client,
 }
 
 func getChangedText(original, regex, changed string) string {
-	re := regexp.MustCompile(regex)
-	return re.ReplaceAllString(original, changed)
+	re := regexp2.MustCompile(regex, 0)
+	result, err := re.Replace(original, changed, 0, -1)
+
+	if err != nil {
+		return original
+	}
+
+	return result
 }

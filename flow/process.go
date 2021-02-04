@@ -19,6 +19,16 @@ type PullRequest struct {
 	err error
 }
 
+const (
+	// Need to test every regex because failures in regexp2.MustCompile results in panic
+	// rewrite version but do not if there is comment "# do-not-rewrite" or "# no-rewrite"
+	versionRewriteRegex = "(?!.*(do-not-rewrite|no-rewrite).*)(version: .*)"
+	// the followings will be used with fmt.Sprintf and %s will be replaced
+	imageRewriteRegexTemplate            = "%s:.*"
+	additionalRewriteKeysRegexTemplate   = "%s: .*"
+	additionalRewritePrefixRegexTemplate = "%s.*"
+)
+
 func (f *Flow) processImage(ctx context.Context, image, version string) error {
 	app, err := getApplicationByImage(image)
 	if err != nil {
@@ -48,18 +58,14 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 		release := newRelease(*app, manifest, version)
 
 		for _, filePath := range manifest.Files {
-			release.AddChanges(filePath, fmt.Sprintf("%s:.*", app.Image), fmt.Sprintf("%s:%s", app.Image, version))
-			release.AddChanges(filePath, "version: .*", fmt.Sprintf("version: %s", version))
-
-			if app.RewriteNewTag && strings.Contains(filePath, "kustomization.yaml") {
-				release.AddChanges(filePath, "newTag: .*", fmt.Sprintf("newTag: %s", version))
-			}
+			release.AddChanges(filePath, fmt.Sprintf(imageRewriteRegexTemplate, app.Image), fmt.Sprintf("%s:%s", app.Image, version))
+			release.AddChanges(filePath, versionRewriteRegex, fmt.Sprintf("version: %s", version))
 
 			for _, key := range app.AdditionalRewriteKeys {
-				release.AddChanges(filePath, fmt.Sprintf("%s: .*", key), fmt.Sprintf("%s: %s", key, version))
+				release.AddChanges(filePath, fmt.Sprintf(additionalRewriteKeysRegexTemplate, key), fmt.Sprintf("%s: %s", key, version))
 			}
 			for _, prefix := range app.AdditionalRewritePrefix {
-				release.AddChanges(filePath, fmt.Sprintf("%s.*", prefix), fmt.Sprintf("%s%s", prefix, version))
+				release.AddChanges(filePath, fmt.Sprintf(additionalRewritePrefixRegexTemplate, prefix), fmt.Sprintf("%s%s", prefix, version))
 			}
 		}
 
