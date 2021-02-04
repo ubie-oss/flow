@@ -3,6 +3,7 @@ module github.com/sakajunquality/flow
 require (
 	cloud.google.com/go/pubsub v1.1.0
 	github.com/GoogleCloudPlatform/berglas v0.5.1
+	github.com/dlclark/regexp2 v1.4.0
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-chi/render v1.0.1
 	github.com/google/go-github/v29 v29.0.2
