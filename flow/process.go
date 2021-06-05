@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/sakajunquality/flow/gitbot"
-	"github.com/sakajunquality/flow/slackbot"
 )
 
 type PullRequests []PullRequest
@@ -37,11 +36,8 @@ func (f *Flow) processImage(ctx context.Context, image, version string) error {
 
 	prs := f.process(ctx, app, version)
 
-	if len(prs) > 0 {
-		err = f.notifyReleasePR(image, version, prs, app)
-		if err != nil {
-			log.Printf("Error Notifying PR: %s", err)
-		}
+	for _, pr := range prs {
+		log.Printf("Processed PR: %s\n", pr.url)
 	}
 	return nil
 }
@@ -220,30 +216,6 @@ func getCommitMessage(a Application, m Manifest, version string) string {
 
 	message += " " + version
 	return message
-}
-
-func (f *Flow) notifyReleasePR(image, version string, prs PullRequests, app *Application) error {
-	var prURL string
-
-	for _, pr := range prs {
-		if pr.err != nil {
-			prURL += fmt.Sprintf("`%s`\n```%s```\n", pr.env, pr.err)
-			continue
-		}
-
-		prURL += fmt.Sprintf("`%s`\n```%s```\n", pr.env, pr.url)
-	}
-
-	d := slackbot.MessageDetail{
-		IsSuccess:  true,
-		IsPrNotify: true,
-		AppName:    fmt.Sprintf("%s/%s", app.SourceOwner, app.SourceName),
-		Image:      image,
-		Version:    version,
-		PrURL:      prURL,
-	}
-
-	return slackbot.NewSlackMessage(f.slackBotToken, cfg.SlackNotifiyChannel, d).Post()
 }
 
 func getApplicationByImage(image string) (*Application, error) {

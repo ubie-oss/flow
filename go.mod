@@ -7,9 +7,6 @@ require (
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-chi/render v1.0.1
 	github.com/google/go-github/v29 v29.0.2
-	github.com/gorilla/websocket v1.4.0 // indirect
-	github.com/lusis/slack-test v0.0.0-20180109053238-3c758769bfa6 // indirect
-	github.com/nlopes/slack v0.4.0
 	github.com/sakajunquality/cloud-pubsub-events v0.0.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
