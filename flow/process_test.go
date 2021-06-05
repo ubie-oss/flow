@@ -72,6 +72,15 @@ func TestNewRelease(t *testing.T) {
 	r6 := newRelease(app, manifest2, version)
 	assert.Equal(t, []string{"alice", "dev", "bob"}, r6.Labels)
 
+	cfg.DefaultBranch = "main"
+	manifest.BaseBranch = ""
+	app.ManifestBaseBranch = ""
+	r7 := newRelease(app, manifest, version)
+	assert.Equal(t, "main", r7.BaseBranch)
+
+	manifest.BaseBranch = "master"
+	r8 := newRelease(app, manifest, version)
+	assert.Equal(t, "master", r8.BaseBranch)
 }
 
 func TestNewReleaseForDefaultOrg(t *testing.T) {
