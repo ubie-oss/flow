@@ -8,6 +8,7 @@ type Config struct {
 	DefaultManifestName  string `yaml:"default_manifest_name"`
 
 	SlackNotifiyChannel string `yaml:"slack_notify_channel"`
+	DefaultBranch       string `yaml:"default_branch"`
 }
 
 type Application struct {

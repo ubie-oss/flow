@@ -123,10 +123,17 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 
 	// Use base a branch configured in app level
 	baseBranch := app.ManifestBaseBranch
+
+	// if baseBranch is not specified in each config use global
+	if baseBranch == "" {
+		baseBranch = cfg.DefaultBranch
+	}
+
 	// if not specified use master
 	if baseBranch == "" {
 		baseBranch = "master"
 	}
+
 	// If a branch is specified in each manifest use it
 	if manifest.BaseBranch != "" {
 		baseBranch = manifest.BaseBranch
