@@ -143,7 +143,7 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 	}
 
 	var body string
-	if !manifest.HideSourceSourceDesc {
+	if !manifest.HideSourceReleaseDesc {
 		body += fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s", app.SourceOwner, app.SourceName, version)
 	}
 

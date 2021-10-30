@@ -30,7 +30,7 @@ type Manifest struct {
 	Env                  string   `yaml:"env"`
 	ShowSourceOwner      bool     `yaml:"show_source_owner"`
 	HideSourceName       bool     `yaml:"hide_source_name"`
-	HideSourceSourceDesc bool     `yaml:"hide_source_release_desc"`
+	HideSourceReleaseDesc bool     `yaml:"hide_source_release_desc"`
 	Files                []string `yaml:"files"`
 	Filters              Filters  `yaml:"filters"`
 	PRBody               string   `yaml:"pr_body"`
