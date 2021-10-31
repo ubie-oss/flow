@@ -9,11 +9,11 @@ import (
 )
 
 type release struct {
-	Repo
-	Author
-	Message           string
-	Body              string
-	Labels            []string
+	repo              Repo
+	author            Author
+	message           string
+	body              string
+	labels            []string
 	changedContentMap map[string]string
 }
 
@@ -51,11 +51,11 @@ type Author struct {
 
 func NewRelease(repo Repo, author Author, message string, body string, labels []string) Release {
 	return &release{
-		Repo:              repo,
-		Author:            author,
-		Message:           message,
-		Body:              body,
-		Labels:            labels,
+		repo:              repo,
+		author:            author,
+		message:           message,
+		body:              body,
+		labels:            labels,
 		changedContentMap: make(map[string]string),
 	}
 }
@@ -89,13 +89,13 @@ func (r *release) CreatePR(ctx context.Context, client *github.Client) (*string,
 	return r.createPR(ctx, client)
 }
 
-func (r *release) GetRepo() *Repo            { return &r.Repo }
-func (r *release) SetRepo(repo Repo)         { r.Repo = repo }
-func (r *release) GetAuthor() *Author        { return &r.Author }
-func (r *release) SetAuthor(author Author)   { r.Author = author }
-func (r *release) GetMessage() string        { return r.Message }
-func (r *release) SetMessage(s string)       { r.Message = s }
-func (r *release) GetBody() string           { return r.Body }
-func (r *release) SetBody(s string)          { r.Body = s }
-func (r *release) GetLabels() []string       { return r.Labels }
-func (r *release) SetLabels(labels []string) { r.Labels = labels }
+func (r *release) GetRepo() *Repo            { return &r.repo }
+func (r *release) SetRepo(repo Repo)         { r.repo = repo }
+func (r *release) GetAuthor() *Author        { return &r.author }
+func (r *release) SetAuthor(author Author)   { r.author = author }
+func (r *release) GetMessage() string        { return r.message }
+func (r *release) SetMessage(s string)       { r.message = s }
+func (r *release) GetBody() string           { return r.body }
+func (r *release) SetBody(s string)          { r.body = s }
+func (r *release) GetLabels() []string       { return r.labels }
+func (r *release) SetLabels(labels []string) { r.labels = labels }

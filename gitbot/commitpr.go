@@ -10,16 +10,16 @@ import (
 )
 
 func (r *release) getRef(ctx context.Context, client *github.Client) (ref *github.Reference, err error) {
-	if ref, _, err = client.Git.GetRef(ctx, r.SourceOwner, r.SourceRepo, "refs/heads/"+r.CommitBranch); err == nil {
+	if ref, _, err = client.Git.GetRef(ctx, r.repo.SourceOwner, r.repo.SourceRepo, "refs/heads/"+r.repo.CommitBranch); err == nil {
 		return ref, nil
 	}
 
 	var baseRef *github.Reference
-	if baseRef, _, err = client.Git.GetRef(ctx, r.SourceOwner, r.SourceRepo, "refs/heads/"+r.BaseBranch); err != nil {
+	if baseRef, _, err = client.Git.GetRef(ctx, r.repo.SourceOwner, r.repo.SourceRepo, "refs/heads/"+r.repo.BaseBranch); err != nil {
 		return nil, err
 	}
-	newRef := &github.Reference{Ref: github.String("refs/heads/" + r.CommitBranch), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
-	ref, _, err = client.Git.CreateRef(ctx, r.SourceOwner, r.SourceRepo, newRef)
+	newRef := &github.Reference{Ref: github.String("refs/heads/" + r.repo.CommitBranch), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
+	ref, _, err = client.Git.CreateRef(ctx, r.repo.SourceOwner, r.repo.SourceRepo, newRef)
 	return ref, err
 }
 
@@ -31,7 +31,7 @@ func (r *release) makeChange(ctx context.Context, client *github.Client, filePat
 		return
 	}
 
-	content, err := r.getOriginalContent(ctx, client, filePath, r.Repo.BaseBranch)
+	content, err := r.getOriginalContent(ctx, client, filePath, r.repo.BaseBranch)
 	if err != nil {
 		log.Printf("Error fetching content %s", err)
 		return
@@ -47,12 +47,12 @@ func (r *release) getTree(ctx context.Context, client *github.Client, ref *githu
 		entries = append(entries, github.TreeEntry{Path: github.String(path), Type: github.String("blob"), Content: github.String(content), Mode: github.String("100644")})
 	}
 
-	tree, _, err := client.Git.CreateTree(ctx, r.SourceOwner, r.SourceRepo, *ref.Object.SHA, entries)
+	tree, _, err := client.Git.CreateTree(ctx, r.repo.SourceOwner, r.repo.SourceRepo, *ref.Object.SHA, entries)
 	return tree, err
 }
 
 func (r *release) pushCommit(ctx context.Context, client *github.Client, ref *github.Reference, tree *github.Tree) error {
-	parent, _, err := client.Repositories.GetCommit(ctx, r.SourceOwner, r.SourceRepo, *ref.Object.SHA)
+	parent, _, err := client.Repositories.GetCommit(ctx, r.repo.SourceOwner, r.repo.SourceRepo, *ref.Object.SHA)
 	if err != nil {
 		return err
 	}
@@ -60,28 +60,28 @@ func (r *release) pushCommit(ctx context.Context, client *github.Client, ref *gi
 	parent.Commit.SHA = parent.SHA
 
 	date := time.Now()
-	author := &github.CommitAuthor{Date: &date, Name: &r.Author.Name, Email: &r.Author.Email}
-	commit := &github.Commit{Author: author, Message: &r.Message, Tree: tree, Parents: []github.Commit{*parent.Commit}}
-	newCommit, _, err := client.Git.CreateCommit(ctx, r.SourceOwner, r.SourceRepo, commit)
+	author := &github.CommitAuthor{Date: &date, Name: &r.author.Name, Email: &r.author.Email}
+	commit := &github.Commit{Author: author, Message: &r.message, Tree: tree, Parents: []github.Commit{*parent.Commit}}
+	newCommit, _, err := client.Git.CreateCommit(ctx, r.repo.SourceOwner, r.repo.SourceRepo, commit)
 	if err != nil {
 		return err
 	}
 
 	ref.Object.SHA = newCommit.SHA
-	_, _, err = client.Git.UpdateRef(ctx, r.SourceOwner, r.SourceRepo, ref, false)
+	_, _, err = client.Git.UpdateRef(ctx, r.repo.SourceOwner, r.repo.SourceRepo, ref, false)
 	return err
 }
 
 func (r *release) createPR(ctx context.Context, client *github.Client) (*string, error) {
 	newPR := &github.NewPullRequest{
-		Title:               github.String(r.Message),
-		Head:                github.String(r.CommitBranch),
-		Base:                github.String(r.BaseBranch),
-		Body:                github.String(r.Body),
+		Title:               github.String(r.message),
+		Head:                github.String(r.repo.CommitBranch),
+		Base:                github.String(r.repo.BaseBranch),
+		Body:                github.String(r.body),
 		MaintainerCanModify: github.Bool(true),
 	}
 
-	pr, _, err := client.PullRequests.Create(ctx, r.SourceOwner, r.SourceRepo, newPR)
+	pr, _, err := client.PullRequests.Create(ctx, r.repo.SourceOwner, r.repo.SourceRepo, newPR)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (r *release) createPR(ctx context.Context, client *github.Client) (*string,
 }
 
 func (r *release) addLabels(ctx context.Context, client *github.Client, prNumber int) error {
-	_, _, err := client.Issues.AddLabelsToIssue(ctx, r.SourceOwner, r.SourceRepo, prNumber, r.Labels)
+	_, _, err := client.Issues.AddLabelsToIssue(ctx, r.repo.SourceOwner, r.repo.SourceRepo, prNumber, r.labels)
 	return err
 }
 
@@ -104,7 +104,7 @@ func (r *release) getOriginalContent(ctx context.Context, client *github.Client,
 		Ref: baseBranch,
 	}
 
-	f, _, _, err := client.Repositories.GetContents(ctx, r.SourceOwner, r.SourceRepo, filePath, opt)
+	f, _, _, err := client.Repositories.GetContents(ctx, r.repo.SourceOwner, r.repo.SourceRepo, filePath, opt)
 
 	if err != nil {
 		return "", err
