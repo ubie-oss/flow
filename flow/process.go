@@ -22,11 +22,11 @@ type PullRequest struct {
 const (
 	// Need to test every regex because failures in regexp2.MustCompile results in panic
 	// rewrite version but do not if there is comment "# do-not-rewrite" or "# no-rewrite"
-	versionRewriteRegex = "(?!.*(do-not-rewrite|no-rewrite).*)(version: +(?<version>[^ ]*))"
+	versionRewriteRegex = "(?!.*(do-not-rewrite|no-rewrite).*)(version: +(?<version>.*))"
 	// the followings will be used with fmt.Sprintf and %s will be replaced
-	imageRewriteRegexTemplate            = "%s:(?<version>[^ ]*)"
-	additionalRewriteKeysRegexTemplate   = "%s: +(?<version>[^ ]*)"
-	additionalRewritePrefixRegexTemplate = "%s(?<version>[^ ]*)"
+	imageRewriteRegexTemplate            = "%s:(?<version>.*)"
+	additionalRewriteKeysRegexTemplate   = "%s: +(?<version>.*)"
+	additionalRewritePrefixRegexTemplate = "%s(?<version>.*)"
 )
 
 func (f *Flow) processImage(ctx context.Context, image, version string) error {
