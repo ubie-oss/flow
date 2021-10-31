@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-github/v29/github"
 )
 
-func (r *Release) getRef(ctx context.Context, client *github.Client) (ref *github.Reference, err error) {
+func (r *release) getRef(ctx context.Context, client *github.Client) (ref *github.Reference, err error) {
 	if ref, _, err = client.Git.GetRef(ctx, r.SourceOwner, r.SourceRepo, "refs/heads/"+r.CommitBranch); err == nil {
 		return ref, nil
 	}
@@ -23,31 +23,27 @@ func (r *Release) getRef(ctx context.Context, client *github.Client) (ref *githu
 	return ref, err
 }
 
-func (r *Release) getTree(ctx context.Context, client *github.Client, ref *github.Reference) (*github.Tree, error) {
-	// filePath:content map
-	entryMap := make(map[string]string)
-
-	for _, c := range r.Changes {
-		// rewrite if target is already changed
-		content, ok := entryMap[c.filePath]
-		if ok {
-			entryMap[c.filePath] = getChangedText(content, c.regexText, c.changedText)
-			continue
-		}
-
-		content, err := r.getOriginalContent(ctx, client, c.filePath, r.Repo.BaseBranch)
-		if err != nil {
-			log.Printf("Error fetching content %s", err)
-			continue
-		}
-
-		changed := getChangedText(content, c.regexText, c.changedText)
-		entryMap[c.filePath] = changed
+func (r *release) makeChange(ctx context.Context, client *github.Client, filePath, regexText string, evaluator regexp2.MatchEvaluator) {
+	// rewrite if target is already changed
+	content, ok := r.changedContentMap[filePath]
+	if ok {
+		r.changedContentMap[filePath] = getChangedText(content, regexText, evaluator)
+		return
 	}
 
-	entries := []github.TreeEntry{}
+	content, err := r.getOriginalContent(ctx, client, filePath, r.Repo.BaseBranch)
+	if err != nil {
+		log.Printf("Error fetching content %s", err)
+		return
+	}
 
-	for path, content := range entryMap {
+	changed := getChangedText(content, regexText, evaluator)
+	r.changedContentMap[filePath] = changed
+}
+
+func (r *release) getTree(ctx context.Context, client *github.Client, ref *github.Reference) (*github.Tree, error) {
+	entries := []github.TreeEntry{}
+	for path, content := range r.changedContentMap {
 		entries = append(entries, github.TreeEntry{Path: github.String(path), Type: github.String("blob"), Content: github.String(content), Mode: github.String("100644")})
 	}
 
@@ -55,7 +51,7 @@ func (r *Release) getTree(ctx context.Context, client *github.Client, ref *githu
 	return tree, err
 }
 
-func (r *Release) pushCommit(ctx context.Context, client *github.Client, ref *github.Reference, tree *github.Tree) error {
+func (r *release) pushCommit(ctx context.Context, client *github.Client, ref *github.Reference, tree *github.Tree) error {
 	parent, _, err := client.Repositories.GetCommit(ctx, r.SourceOwner, r.SourceRepo, *ref.Object.SHA)
 	if err != nil {
 		return err
@@ -76,7 +72,7 @@ func (r *Release) pushCommit(ctx context.Context, client *github.Client, ref *gi
 	return err
 }
 
-func (r *Release) createPR(ctx context.Context, client *github.Client) (*string, error) {
+func (r *release) createPR(ctx context.Context, client *github.Client) (*string, error) {
 	newPR := &github.NewPullRequest{
 		Title:               github.String(r.Message),
 		Head:                github.String(r.CommitBranch),
@@ -98,12 +94,12 @@ func (r *Release) createPR(ctx context.Context, client *github.Client) (*string,
 	return github.String(pr.GetHTMLURL()), nil
 }
 
-func (r *Release) addLabels(ctx context.Context, client *github.Client, prNumber int) error {
+func (r *release) addLabels(ctx context.Context, client *github.Client, prNumber int) error {
 	_, _, err := client.Issues.AddLabelsToIssue(ctx, r.SourceOwner, r.SourceRepo, prNumber, r.Labels)
 	return err
 }
 
-func (r *Release) getOriginalContent(ctx context.Context, client *github.Client, filePath, baseBranch string) (string, error) {
+func (r *release) getOriginalContent(ctx context.Context, client *github.Client, filePath, baseBranch string) (string, error) {
 	opt := &github.RepositoryContentGetOptions{
 		Ref: baseBranch,
 	}
@@ -117,9 +113,9 @@ func (r *Release) getOriginalContent(ctx context.Context, client *github.Client,
 	return f.GetContent()
 }
 
-func getChangedText(original, regex, changed string) string {
+func getChangedText(original, regex string, evaluator regexp2.MatchEvaluator) string {
 	re := regexp2.MustCompile(regex, 0)
-	result, err := re.Replace(original, changed, 0, -1)
+	result, err := re.ReplaceFunc(original, evaluator, 0, -1)
 
 	if err != nil {
 		return original

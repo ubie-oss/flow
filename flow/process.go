@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/dlclark/regexp2"
 	"github.com/sakajunquality/flow/gitbot"
 )
 
@@ -21,11 +22,11 @@ type PullRequest struct {
 const (
 	// Need to test every regex because failures in regexp2.MustCompile results in panic
 	// rewrite version but do not if there is comment "# do-not-rewrite" or "# no-rewrite"
-	versionRewriteRegex = "(?!.*(do-not-rewrite|no-rewrite).*)(version: .*)"
+	versionRewriteRegex = "(?!.*(do-not-rewrite|no-rewrite).*)(version: +(?<version>[^ ]*))"
 	// the followings will be used with fmt.Sprintf and %s will be replaced
-	imageRewriteRegexTemplate            = "%s:.*"
-	additionalRewriteKeysRegexTemplate   = "%s: .*"
-	additionalRewritePrefixRegexTemplate = "%s.*"
+	imageRewriteRegexTemplate            = "%s:(?<version>[^ ]*)"
+	additionalRewriteKeysRegexTemplate   = "%s: +(?<version>[^ ]*)"
+	additionalRewritePrefixRegexTemplate = "%s(?<version>[^ ]*)"
 )
 
 func (f *Flow) processImage(ctx context.Context, image, version string) error {
@@ -53,17 +54,49 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 
 		release := newRelease(*app, manifest, version)
 
+		oldVersions := map[string]interface{}{}
 		for _, filePath := range manifest.Files {
-			release.AddChanges(filePath, fmt.Sprintf(imageRewriteRegexTemplate, app.Image), fmt.Sprintf("%s:%s", app.Image, version))
-			release.AddChanges(filePath, versionRewriteRegex, fmt.Sprintf("version: %s", version))
+			release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(imageRewriteRegexTemplate, app.Image), func(m regexp2.Match) string {
+				oldVersions[m.GroupByName("version").String()] = nil
+				return fmt.Sprintf("%s:%s", app.Image, version)
+			})
+			release.MakeChangeFunc(ctx, client, filePath, versionRewriteRegex, func(m regexp2.Match) string {
+				oldVersions[m.GroupByName("version").String()] = nil
+				return fmt.Sprintf("version: %s", version)
+			})
 
 			for _, key := range app.AdditionalRewriteKeys {
-				release.AddChanges(filePath, fmt.Sprintf(additionalRewriteKeysRegexTemplate, key), fmt.Sprintf("%s: %s", key, version))
+				release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(additionalRewriteKeysRegexTemplate, key), func(m regexp2.Match) string {
+					oldVersions[m.GroupByName("version").String()] = nil
+					return fmt.Sprintf("%s: %s", key, version)
+				})
 			}
 			for _, prefix := range app.AdditionalRewritePrefix {
-				release.AddChanges(filePath, fmt.Sprintf(additionalRewritePrefixRegexTemplate, prefix), fmt.Sprintf("%s%s", prefix, version))
+				release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(additionalRewritePrefixRegexTemplate, prefix), func(m regexp2.Match) string {
+					oldVersions[m.GroupByName("version").String()] = nil
+					return fmt.Sprintf("%s%s", prefix, version)
+				})
 			}
 		}
+
+		var body string
+		if !manifest.HideSourceReleaseDesc {
+			body += "## Release\n"
+			body += fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s\n", app.SourceOwner, app.SourceName, version)
+			body += "\n"
+
+			body += "### Diff from last release\n"
+			for oldVersion := range oldVersions {
+				body += fmt.Sprintf("https://github.com/%s/%s/compare/%s...%s\n", app.SourceOwner, app.SourceName, version, oldVersion)
+			}
+			body += "\n"
+		}
+
+		if manifest.PRBody != "" {
+			body += fmt.Sprintf("\n\n%s", manifest.PRBody)
+		}
+
+		release.SetBody(body)
 
 		err := release.Commit(ctx, client)
 		if err != nil {
@@ -113,7 +146,7 @@ func shouldProcess(m Manifest, version string) bool {
 	return false
 }
 
-func newRelease(app Application, manifest Manifest, version string) *gitbot.Release {
+func newRelease(app Application, manifest Manifest, version string) gitbot.Release {
 	branchName := getBranchName(app, manifest, version)
 	message := getCommitMessage(app, manifest, version)
 
@@ -142,15 +175,6 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 		commitBranch = baseBranch
 	}
 
-	var body string
-	if !manifest.HideSourceReleaseDesc {
-		body += fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s", app.SourceOwner, app.SourceName, version)
-	}
-
-	if manifest.PRBody != "" {
-		body += fmt.Sprintf("\n\n%s", manifest.PRBody)
-	}
-
 	manifestOwner := cfg.DefaultManifestOwner
 	manifestName := cfg.DefaultManifestName
 
@@ -167,21 +191,21 @@ func newRelease(app Application, manifest Manifest, version string) *gitbot.Rele
 	labels = append(labels, manifest.Env)
 	labels = append(labels, manifest.Labels...)
 
-	return &gitbot.Release{
-		Repo: gitbot.Repo{
+	return gitbot.NewRelease(
+		gitbot.Repo{
 			SourceOwner:  manifestOwner,
 			SourceRepo:   manifestName,
 			BaseBranch:   baseBranch,
 			CommitBranch: commitBranch,
 		},
-		Author: gitbot.Author{
+		gitbot.Author{
 			Name:  cfg.GitAuthor.Name,
 			Email: cfg.GitAuthor.Email,
 		},
-		Message: message,
-		Body:    body,
-		Labels:  labels,
-	}
+		message,
+		"",
+		labels,
+	)
 }
 
 func getBranchName(a Application, m Manifest, version string) string {
