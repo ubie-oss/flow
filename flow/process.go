@@ -54,48 +54,36 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 
 		release := newRelease(*app, manifest, version)
 
-		oldVersions := map[string]interface{}{}
+		oldVersionSet := map[string]interface{}{}
 		for _, filePath := range manifest.Files {
 			release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(imageRewriteRegexTemplate, app.Image), func(m regexp2.Match) string {
-				oldVersions[m.GroupByName("version").String()] = nil
+				oldVersionSet[m.GroupByName("version").String()] = nil
 				return fmt.Sprintf("%s:%s", app.Image, version)
 			})
 			release.MakeChangeFunc(ctx, client, filePath, versionRewriteRegex, func(m regexp2.Match) string {
-				oldVersions[m.GroupByName("version").String()] = nil
+				oldVersionSet[m.GroupByName("version").String()] = nil
 				return fmt.Sprintf("version: %s", version)
 			})
 
 			for _, key := range app.AdditionalRewriteKeys {
 				release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(additionalRewriteKeysRegexTemplate, key), func(m regexp2.Match) string {
-					oldVersions[m.GroupByName("version").String()] = nil
+					oldVersionSet[m.GroupByName("version").String()] = nil
 					return fmt.Sprintf("%s: %s", key, version)
 				})
 			}
 			for _, prefix := range app.AdditionalRewritePrefix {
 				release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(additionalRewritePrefixRegexTemplate, prefix), func(m regexp2.Match) string {
-					oldVersions[m.GroupByName("version").String()] = nil
+					oldVersionSet[m.GroupByName("version").String()] = nil
 					return fmt.Sprintf("%s%s", prefix, version)
 				})
 			}
 		}
 
-		var body string
-		if !manifest.HideSourceReleaseDesc {
-			body += "## Release\n"
-			body += fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s\n", app.SourceOwner, app.SourceName, version)
-			body += "\n"
-
-			body += "### Diff from last release\n"
-			for oldVersion := range oldVersions {
-				body += fmt.Sprintf("https://github.com/%s/%s/compare/%s...%s\n", app.SourceOwner, app.SourceName, version, oldVersion)
-			}
-			body += "\n"
+		oldVersions := []string{}
+		for oldVersion := range oldVersionSet {
+			oldVersions = append(oldVersions, oldVersion)
 		}
-
-		if manifest.PRBody != "" {
-			body += fmt.Sprintf("\n\n%s", manifest.PRBody)
-		}
-
+		body := generateBody(*app, manifest, version, oldVersions)
 		release.SetBody(body)
 
 		err := release.Commit(ctx, client)
@@ -249,4 +237,25 @@ func getApplicationByImage(image string) (*Application, error) {
 		}
 	}
 	return nil, errors.New("No application found for image " + image)
+}
+
+func generateBody(app Application, manifest Manifest, version string, oldVersions []string) string {
+	var body string
+	if !manifest.HideSourceReleaseDesc {
+		body += "## Release\n"
+		body += fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s\n", app.SourceOwner, app.SourceName, version)
+		body += "\n"
+
+		body += "### Diff from last release\n"
+		for oldVersion := range oldVersions {
+			body += fmt.Sprintf("https://github.com/%s/%s/compare/%s...%s\n", app.SourceOwner, app.SourceName, version, oldVersion)
+		}
+		body += "\n"
+	}
+
+	if manifest.PRBody != "" {
+		body += fmt.Sprintf("\n\n%s", manifest.PRBody)
+	}
+
+	return body
 }
