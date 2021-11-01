@@ -7,18 +7,11 @@ import (
 	"os"
 	"strings"
 
-	"cloud.google.com/go/pubsub"
 	"github.com/sakajunquality/cloud-pubsub-events/gcrevent"
 )
 
-const (
-	pubsubTopicID = "cloud-builds"
-	subName       = "cloudbuild-flow-sub"
-)
-
 var (
-	subscription *pubsub.Subscription
-	cfg          *Config
+	cfg *Config
 )
 
 type Flow struct {
