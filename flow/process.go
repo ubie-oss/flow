@@ -247,7 +247,7 @@ func generateBody(app Application, manifest Manifest, version string, oldVersion
 		body += "\n"
 
 		body += "### Diff from last release\n"
-		for oldVersion := range oldVersions {
+		for _, oldVersion := range oldVersions {
 			body += fmt.Sprintf("https://github.com/%s/%s/compare/%s...%s\n", app.SourceOwner, app.SourceName, version, oldVersion)
 		}
 		body += "\n"
