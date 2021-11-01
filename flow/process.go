@@ -254,7 +254,7 @@ func generateBody(app Application, manifest Manifest, version string, oldVersion
 	}
 
 	if manifest.PRBody != "" {
-		body += fmt.Sprintf("\n\n%s", manifest.PRBody)
+		body += fmt.Sprintf("\n---\n%s", manifest.PRBody)
 	}
 
 	return body
