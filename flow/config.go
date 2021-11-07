@@ -27,16 +27,17 @@ type Application struct {
 }
 
 type Manifest struct {
-	Env                  string   `yaml:"env"`
-	ShowSourceOwner      bool     `yaml:"show_source_owner"`
-	HideSourceName       bool     `yaml:"hide_source_name"`
-	HideSourceReleaseDesc bool     `yaml:"hide_source_release_desc"`
-	Files                []string `yaml:"files"`
-	Filters              Filters  `yaml:"filters"`
-	PRBody               string   `yaml:"pr_body"`
-	BaseBranch           string   `yaml:"base_branch"`
-	CommitWithoutPR      bool     `yaml:"commit_without_pr"`
-	Labels               []string `yaml:"labels"`
+	Env                           string   `yaml:"env"`
+	ShowSourceOwner               bool     `yaml:"show_source_owner"`
+	HideSourceName                bool     `yaml:"hide_source_name"`
+	HideSourceReleaseDesc         bool     `yaml:"hide_source_release_desc"`
+	HideSourceReleasePullRequests bool     `yaml:"hide_source_release_pull_requests"`
+	Files                         []string `yaml:"files"`
+	Filters                       Filters  `yaml:"filters"`
+	PRBody                        string   `yaml:"pr_body"`
+	BaseBranch                    string   `yaml:"base_branch"`
+	CommitWithoutPR               bool     `yaml:"commit_without_pr"`
+	Labels                        []string `yaml:"labels"`
 }
 
 type Filters struct {
