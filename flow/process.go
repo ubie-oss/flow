@@ -284,7 +284,7 @@ func generateBody(ctx context.Context, client *github.Client, app *Application, 
 						log.Printf("Error get pull request: %s", err)
 						continue
 					}
-					body += fmt.Sprintf("- %s by @%s in #%d\n", *pr.Title, *pr.User.Login, *pr.Number)
+					body += fmt.Sprintf("- %s by @%s in %s/%s#%d\n", *pr.Title, *pr.User.Login, app.SourceOwner, app.SourceName, *pr.Number)
 				}
 				body += "\n"
 			}
