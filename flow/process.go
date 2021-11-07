@@ -253,7 +253,7 @@ func generateBody(ctx context.Context, client *github.Client, app *Application, 
 
 		body += "## Changes\n"
 		for _, oldVersion := range oldVersions {
-			body += fmt.Sprintf("### %s...%s\n\n", oldVersion, version)
+			body += fmt.Sprintf("### https://github.com/%s/%s/compare/%s...%s\n\n", app.SourceOwner, app.SourceName, oldVersion, version)
 			if !manifest.HideSourceReleasePullRequests {
 				prNumbers := []int{}
 				cmp, _, err := client.Repositories.CompareCommits(ctx, app.SourceOwner, app.SourceName, oldVersion, version)
@@ -288,8 +288,6 @@ func generateBody(ctx context.Context, client *github.Client, app *Application, 
 				}
 				body += "\n"
 			}
-			body += fmt.Sprintf("__Full Changelog__: https://github.com/%s/%s/compare/%s...%s\n", app.SourceOwner, app.SourceName, oldVersion, version)
-			body += "\n"
 		}
 		body += "\n"
 	}
