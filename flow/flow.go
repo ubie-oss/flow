@@ -15,22 +15,18 @@ var (
 )
 
 type Flow struct {
-	Env           string
-	projectID     string
-	slackBotToken string
-	githubToken   string
+	Env         string
+	githubToken string
 }
 
 func New(c *Config) (*Flow, error) {
 	cfg = c
 	f := &Flow{
-		projectID:     os.Getenv("FLOW_GCP_PROJECT_ID"),
-		slackBotToken: os.Getenv("FLOW_SLACK_BOT_TOKEN"),
-		githubToken:   os.Getenv("FLOW_GITHUB_TOKEN"),
+		githubToken: os.Getenv("FLOW_GITHUB_TOKEN"),
 	}
 
-	if f.projectID == "" || f.slackBotToken == "" || f.githubToken == "" {
-		return nil, errors.New("You need to specify a non-empty value for FLOW_GCP_PROJECT_ID, FLOW_SLACK_BOT_TOKEN and FLOW_GITHUB_TOKEN")
+	if f.githubToken == "" {
+		return nil, errors.New("You need to specify a non-empty value for FLOW_GITHUB_TOKEN")
 	}
 
 	return f, nil
