@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/dlclark/regexp2"
+	"github.com/google/go-github/v29/github"
 	"github.com/sakajunquality/flow/gitbot"
 )
 
@@ -27,6 +29,9 @@ const (
 	additionalRewriteKeysRegexTemplate   = "%s: +\"?(?<version>[a-zA-Z0-9-_+.]*)\"?"
 	additionalRewritePrefixRegexTemplate = "%s(?<version>[a-zA-Z0-9-_+.]*)"
 )
+
+// Merge commit regex.
+var mergeCommitRegex = regexp2.MustCompile("^Merge pull request #(?<number>\\d+) ", 0)
 
 func (f *Flow) processImage(ctx context.Context, image, version string) error {
 	app, err := getApplicationByImage(image)
@@ -82,7 +87,7 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 		for oldVersion := range oldVersionSet {
 			oldVersions = append(oldVersions, oldVersion)
 		}
-		body := generateBody(*app, manifest, version, oldVersions)
+		body := generateBody(ctx, client, app, manifest, version, oldVersions)
 		release.SetBody(body)
 
 		err := release.Commit(ctx, client)
@@ -238,16 +243,52 @@ func getApplicationByImage(image string) (*Application, error) {
 	return nil, errors.New("No application found for image " + image)
 }
 
-func generateBody(app Application, manifest Manifest, version string, oldVersions []string) string {
+func generateBody(ctx context.Context, client *github.Client, app *Application, manifest Manifest, version string, oldVersions []string) string {
 	var body string
+
 	if !manifest.HideSourceReleaseDesc {
-		body += "## Release\n"
+		body += "# Release\n"
 		body += fmt.Sprintf("https://github.com/%s/%s/releases/tag/%s\n", app.SourceOwner, app.SourceName, version)
 		body += "\n"
 
-		body += "### Diff from last release\n"
+		body += "## Changes\n\n"
 		for _, oldVersion := range oldVersions {
-			body += fmt.Sprintf("https://github.com/%s/%s/compare/%s...%s\n", app.SourceOwner, app.SourceName, oldVersion, version)
+			body += fmt.Sprintf("https://github.com/%s/%s/compare/%s...%s\n\n", app.SourceOwner, app.SourceName, oldVersion, version)
+			if !manifest.HideSourceReleasePullRequests {
+				body += "### Pull Requests\n\n"
+				prNumbers := []int{}
+				cmp, _, err := client.Repositories.CompareCommits(ctx, app.SourceOwner, app.SourceName, oldVersion, version)
+				if err != nil {
+					log.Printf("Error compare commits: %s", err)
+					continue
+				}
+				for _, commit := range cmp.Commits {
+					if commit.Commit.Message != nil {
+						m, err := mergeCommitRegex.FindStringMatch(*commit.Commit.Message)
+						if err != nil {
+							log.Printf("Error find string match: %s", err)
+							continue
+						}
+						if m != nil {
+							number, err := strconv.Atoi(m.GroupByName("number").String())
+							if err != nil {
+								log.Printf("Error converting number string: %s", err)
+								continue
+							}
+							prNumbers = append(prNumbers, number)
+						}
+					}
+				}
+				for _, number := range prNumbers {
+					pr, _, err := client.PullRequests.Get(ctx, app.SourceOwner, app.SourceName, number)
+					if err != nil {
+						log.Printf("Error get pull request: %s", err)
+						continue
+					}
+					body += fmt.Sprintf("- %s by @%s in %s/%s#%d\n", *pr.Title, *pr.User.Login, app.SourceOwner, app.SourceName, *pr.Number)
+				}
+				body += "\n"
+			}
 		}
 		body += "\n"
 	}
