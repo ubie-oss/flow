@@ -28,6 +28,7 @@ type Application struct {
 
 type Manifest struct {
 	Env                           string   `yaml:"env"`
+	Name                          string   `yaml:"name"`
 	ShowSourceOwner               bool     `yaml:"show_source_owner"`
 	HideSourceName                bool     `yaml:"hide_source_name"`
 	HideSourceReleaseDesc         bool     `yaml:"hide_source_release_desc"`

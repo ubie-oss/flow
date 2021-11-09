@@ -173,6 +173,8 @@ func TestGetBranchName(t *testing.T) {
 	assert.Equal(t, "rollout/prod-foo-inc-bar-v0.0.0", getBranchName(app, manifest, version))
 	manifest.HideSourceName = true
 	assert.Equal(t, "rollout/prod-v0.0.0", getBranchName(app, manifest, version))
+	manifest.Name = "foo"
+	assert.Equal(t, "rollout/prod-foo-v0.0.0", getBranchName(app, manifest, version))
 }
 
 func TestGetCommitMessage(t *testing.T) {

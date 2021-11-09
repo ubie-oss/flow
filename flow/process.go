@@ -204,13 +204,17 @@ func getBranchName(a Application, m Manifest, version string) string {
 	branch := "rollout/"
 	branch += m.Env
 
-	repo := a.SourceName
-	if m.ShowSourceOwner {
-		repo = fmt.Sprintf("%s-%s", a.SourceOwner, repo)
-	}
+	if m.Name != "" {
+		branch += "-" + m.Name
+	} else {
+		repo := a.SourceName
+		if m.ShowSourceOwner {
+			repo = fmt.Sprintf("%s-%s", a.SourceOwner, repo)
+		}
 
-	if !m.HideSourceName {
-		branch += "-" + repo
+		if !m.HideSourceName {
+			branch += "-" + repo
+		}
 	}
 
 	branch += "-" + version
