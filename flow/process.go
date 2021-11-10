@@ -225,13 +225,17 @@ func getCommitMessage(a Application, m Manifest, version string) string {
 	message := "Rollout"
 	message += " " + m.Env
 
-	repo := a.SourceName
-	if m.ShowSourceOwner {
-		repo = fmt.Sprintf("%s/%s", a.SourceOwner, repo)
-	}
+	if m.Name != "" {
+		message += " " + m.Name
+	} else {
+		repo := a.SourceName
+		if m.ShowSourceOwner {
+			repo = fmt.Sprintf("%s/%s", a.SourceOwner, repo)
+		}
 
-	if !m.HideSourceName {
-		message += " " + repo
+		if !m.HideSourceName {
+			message += " " + repo
+		}
 	}
 
 	message += " " + version
