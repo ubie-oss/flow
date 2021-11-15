@@ -204,8 +204,8 @@ func getBranchName(a Application, m Manifest, version string) string {
 	branch := "rollout/"
 	branch += m.Env
 
-	if m.Name != "" {
-		branch += "-" + m.Name
+	if a.Name != "" {
+		branch += "-" + a.Name
 	} else {
 		repo := a.SourceName
 		if m.ShowSourceOwner {
@@ -225,8 +225,8 @@ func getCommitMessage(a Application, m Manifest, version string) string {
 	message := "Rollout"
 	message += " " + m.Env
 
-	if m.Name != "" {
-		message += " " + m.Name
+	if a.Name != "" {
+		message += " " + a.Name
 	} else {
 		repo := a.SourceName
 		if m.ShowSourceOwner {

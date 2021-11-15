@@ -12,6 +12,7 @@ type Config struct {
 }
 
 type Application struct {
+	Name               string `yaml:"name"`
 	SourceOwner        string `yaml:"source_owner"`
 	SourceName         string `yaml:"source_name"`
 	ManifestOwner      string `yaml:"manifest_owner"`
@@ -28,7 +29,6 @@ type Application struct {
 
 type Manifest struct {
 	Env                           string   `yaml:"env"`
-	Name                          string   `yaml:"name"`
 	ShowSourceOwner               bool     `yaml:"show_source_owner"`
 	HideSourceName                bool     `yaml:"hide_source_name"`
 	HideSourceReleaseDesc         bool     `yaml:"hide_source_release_desc"`
