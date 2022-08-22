@@ -110,6 +110,13 @@ func TestNewReleaseForDefaultOrg(t *testing.T) {
 	r2 := newRelease(app, manifest, version)
 	assert.Equal(t, "abc-inc", r2.GetRepo().SourceOwner)
 	assert.Equal(t, "xyz-repo", r2.GetRepo().SourceRepo)
+
+	manifest.ManifestOwner = "another-owner"
+	manifest.ManifestName = "another-name"
+
+	r3 := newRelease(app, manifest, version)
+	assert.Equal(t, "another-owner", r3.GetRepo().SourceOwner)
+	assert.Equal(t, "another-name", r3.GetRepo().SourceRepo)
 }
 
 func TestShouldProcess(t *testing.T) {
