@@ -33,6 +33,8 @@ type Manifest struct {
 	HideSourceName                bool     `yaml:"hide_source_name"`
 	HideSourceReleaseDesc         bool     `yaml:"hide_source_release_desc"`
 	HideSourceReleasePullRequests bool     `yaml:"hide_source_release_pull_requests"`
+	ManifestOwner                 string   `yaml:"manifest_owner"`
+	ManifestName                  string   `yaml:"manifest_name"`
 	Files                         []string `yaml:"files"`
 	Filters                       Filters  `yaml:"filters"`
 	PRBody                        string   `yaml:"pr_body"`

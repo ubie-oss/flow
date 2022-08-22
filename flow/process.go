@@ -168,13 +168,16 @@ func newRelease(app Application, manifest Manifest, version string) gitbot.Relea
 	}
 
 	manifestOwner := cfg.DefaultManifestOwner
-	manifestName := cfg.DefaultManifestName
-
-	if app.ManifestOwner != "" {
+	if manifest.ManifestOwner != "" {
+		manifestOwner = manifest.ManifestOwner
+	} else if app.ManifestOwner != "" {
 		manifestOwner = app.ManifestOwner
 	}
 
-	if app.ManifestName != "" {
+	manifestName := cfg.DefaultManifestName
+	if manifest.ManifestName != "" {
+		manifestName = manifest.ManifestName
+	} else if app.ManifestName != "" {
 		manifestName = app.ManifestName
 	}
 
