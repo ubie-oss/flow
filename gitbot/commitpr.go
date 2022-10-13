@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/dlclark/regexp2"
-	"github.com/google/go-github/v29/github"
+	"github.com/google/go-github/v47/github"
 )
 
 func (r *release) getRef(ctx context.Context, client *github.Client) (ref *github.Reference, err error) {
@@ -42,9 +42,9 @@ func (r *release) makeChange(ctx context.Context, client *github.Client, filePat
 }
 
 func (r *release) getTree(ctx context.Context, client *github.Client, ref *github.Reference) (*github.Tree, error) {
-	entries := []github.TreeEntry{}
+	entries := []*github.TreeEntry{}
 	for path, content := range r.changedContentMap {
-		entries = append(entries, github.TreeEntry{Path: github.String(path), Type: github.String("blob"), Content: github.String(content), Mode: github.String("100644")})
+		entries = append(entries, &github.TreeEntry{Path: github.String(path), Type: github.String("blob"), Content: github.String(content), Mode: github.String("100644")})
 	}
 
 	tree, _, err := client.Git.CreateTree(ctx, r.repo.SourceOwner, r.repo.SourceRepo, *ref.Object.SHA, entries)
@@ -52,7 +52,7 @@ func (r *release) getTree(ctx context.Context, client *github.Client, ref *githu
 }
 
 func (r *release) pushCommit(ctx context.Context, client *github.Client, ref *github.Reference, tree *github.Tree) error {
-	parent, _, err := client.Repositories.GetCommit(ctx, r.repo.SourceOwner, r.repo.SourceRepo, *ref.Object.SHA)
+	parent, _, err := client.Repositories.GetCommit(ctx, r.repo.SourceOwner, r.repo.SourceRepo, *ref.Object.SHA, nil)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (r *release) pushCommit(ctx context.Context, client *github.Client, ref *gi
 
 	date := time.Now()
 	author := &github.CommitAuthor{Date: &date, Name: &r.author.Name, Email: &r.author.Email}
-	commit := &github.Commit{Author: author, Message: &r.message, Tree: tree, Parents: []github.Commit{*parent.Commit}}
+	commit := &github.Commit{Author: author, Message: &r.message, Tree: tree, Parents: []*github.Commit{parent.Commit}}
 	newCommit, _, err := client.Git.CreateCommit(ctx, r.repo.SourceOwner, r.repo.SourceRepo, commit)
 	if err != nil {
 		return err
