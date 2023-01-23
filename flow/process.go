@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/dlclark/regexp2"
-	"github.com/google/go-github/v29/github"
+	"github.com/google/go-github/v47/github"
 	"github.com/sakajunquality/flow/gitbot"
 )
 
@@ -268,7 +268,7 @@ func generateBody(ctx context.Context, client *github.Client, app *Application, 
 			if !manifest.HideSourceReleasePullRequests {
 				body += "### Pull Requests\n\n"
 				prNumbers := []int{}
-				cmp, _, err := client.Repositories.CompareCommits(ctx, app.SourceOwner, app.SourceName, oldVersion, version)
+				cmp, _, err := client.Repositories.CompareCommits(ctx, app.SourceOwner, app.SourceName, oldVersion, version, nil)
 				if err != nil {
 					log.Printf("Error compare commits: %s", err)
 					continue
