@@ -38,6 +38,9 @@ func (f *Flow) ProcessGCREvent(ctx context.Context, e gcrevent.Event) error {
 	}
 
 	parts := strings.Split(*e.Tag, ":")
+	if len(parts) < 2 {
+		return errors.New("invalid image tag or missing version")
+	}
 	image, version := parts[0], parts[1]
 
 	if image == "" || version == "" {
