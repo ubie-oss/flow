@@ -26,7 +26,7 @@ func New(c *Config) (*Flow, error) {
 	}
 
 	if f.githubToken == "" {
-		return nil, errors.New("You need to specify a non-empty value for FLOW_GITHUB_TOKEN")
+		return nil, errors.New("you need to specify a non-empty value for FLOW_GITHUB_TOKEN")
 	}
 
 	return f, nil
@@ -37,6 +37,10 @@ func (f *Flow) ProcessGCREvent(ctx context.Context, e gcrevent.Event) error {
 		return nil
 	}
 
+	if e.Tag == nil {
+		return nil
+	}
+
 	parts := strings.Split(*e.Tag, ":")
 	if len(parts) < 2 {
 		return errors.New("invalid image tag or missing version")
@@ -44,7 +48,7 @@ func (f *Flow) ProcessGCREvent(ctx context.Context, e gcrevent.Event) error {
 	image, version := parts[0], parts[1]
 
 	if image == "" || version == "" {
-		return fmt.Errorf("Image format invalid: %s", *e.Tag)
+		return fmt.Errorf("image format invalid: %s", *e.Tag)
 	}
 
 	return f.processImage(ctx, image, version)
