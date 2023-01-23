@@ -102,7 +102,7 @@ func handlePubSubMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = f.ProcessGCREvent(ctx, event)
-	log.Printf("process: %v", err)
+	log.Printf("process: %s", err)
 
 	res := &Response{
 		Status: http.StatusOK,
