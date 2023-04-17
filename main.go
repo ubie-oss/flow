@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -80,7 +81,7 @@ func handlePubSubMessage(w http.ResponseWriter, r *http.Request) {
 	ctx := context.TODO()
 
 	var m PubSubMessage
-	body, err := os.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("iotuil.ReadAll: %v", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
