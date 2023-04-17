@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -65,7 +65,7 @@ func main() {
 }
 
 func getConfig() ([]byte, error) {
-	return ioutil.ReadFile(os.Getenv("FLOW_CONFIG_PATH"))
+	return os.ReadFile(os.Getenv("FLOW_CONFIG_PATH"))
 }
 
 func initFlow(config []byte) (*flow.Flow, error) {
@@ -81,7 +81,7 @@ func handlePubSubMessage(w http.ResponseWriter, r *http.Request) {
 	ctx := context.TODO()
 
 	var m PubSubMessage
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("iotuil.ReadAll: %v", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
