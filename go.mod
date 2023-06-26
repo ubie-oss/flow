@@ -5,7 +5,7 @@ require (
 	github.com/dlclark/regexp2 v1.10.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-chi/render v1.0.2
-	github.com/google/go-github/v47 v47.1.0
+	github.com/google/go-github/v53 v53.2.0
 	github.com/sakajunquality/cloud-pubsub-events v0.0.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/oauth2 v0.9.0
@@ -20,7 +20,9 @@ require (
 	cloud.google.com/go/kms v1.12.1 // indirect
 	cloud.google.com/go/secretmanager v1.11.1 // indirect
 	cloud.google.com/go/storage v1.30.1 // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
 	github.com/ajg/form v1.5.1 // indirect
+	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect

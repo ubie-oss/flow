@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/dlclark/regexp2"
-	"github.com/google/go-github/v47/github"
+	"github.com/google/go-github/v53/github"
 	"github.com/sakajunquality/flow/gitbot"
 )
 
