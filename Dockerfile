@@ -9,7 +9,7 @@ COPY go.sum .
 RUN go mod download
 
 COPY . .
-RUN go build -o /go/bin/server 
+RUN CGO_ENABLED=0 go build -o /go/bin/server 
 
 FROM run
 COPY --from=build /go/bin/server /usr/local/bin/server
