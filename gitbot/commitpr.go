@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/dlclark/regexp2"
-	"github.com/google/go-github/v47/github"
+	"github.com/google/go-github/v53/github"
 )
 
 func (r *release) getRef(ctx context.Context, client *github.Client) (ref *github.Reference, err error) {
@@ -60,7 +60,7 @@ func (r *release) pushCommit(ctx context.Context, client *github.Client, ref *gi
 	parent.Commit.SHA = parent.SHA
 
 	date := time.Now()
-	author := &github.CommitAuthor{Date: &date, Name: &r.author.Name, Email: &r.author.Email}
+	author := &github.CommitAuthor{Date: &github.Timestamp{date}, Name: &r.author.Name, Email: &r.author.Email}
 	commit := &github.Commit{Author: author, Message: &r.message, Tree: tree, Parents: []*github.Commit{parent.Commit}}
 	newCommit, _, err := client.Git.CreateCommit(ctx, r.repo.SourceOwner, r.repo.SourceRepo, commit)
 	if err != nil {
