@@ -15,7 +15,7 @@ import (
 	"github.com/sakajunquality/cloud-pubsub-events/gcrevent"
 	"github.com/sakajunquality/flow/flow"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	_ "github.com/GoogleCloudPlatform/berglas/pkg/auto"
 )
