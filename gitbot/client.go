@@ -3,7 +3,7 @@ package gitbot
 import (
 	"context"
 
-	"github.com/google/go-github/v53/github"
+	"github.com/google/go-github/v57/github"
 
 	"golang.org/x/oauth2"
 )
