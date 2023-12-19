@@ -1,5 +1,5 @@
-FROM golang:1.20 as go
-FROM gcr.io/distroless/base-debian10 as run
+FROM golang:1.21 as go
+FROM gcr.io/distroless/base-debian12 as run
 
 FROM go as build
 WORKDIR /go/src/github.com/sakajunquality/flow
