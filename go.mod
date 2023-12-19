@@ -3,13 +3,13 @@ module github.com/sakajunquality/flow
 require (
 	github.com/GoogleCloudPlatform/berglas v1.0.3
 	github.com/dlclark/regexp2 v1.10.0
-	github.com/go-chi/chi v4.1.2+incompatible
+	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-chi/render v1.0.3
-	github.com/google/go-github/v53 v53.2.0
+	github.com/google/go-github/v57 v57.0.0
 	github.com/sakajunquality/cloud-pubsub-events v0.0.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/oauth2 v0.15.0
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -20,9 +20,7 @@ require (
 	cloud.google.com/go/kms v1.15.5 // indirect
 	cloud.google.com/go/secretmanager v1.11.4 // indirect
 	cloud.google.com/go/storage v1.36.0 // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c // indirect
 	github.com/ajg/form v1.5.1 // indirect
-	github.com/cloudflare/circl v1.3.6 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
@@ -57,7 +55,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231212172506-995d672761c0 // indirect
 	google.golang.org/grpc v1.60.1 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 go 1.21
