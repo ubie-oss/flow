@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/sakajunquality/cloud-pubsub-events/gcrevent"
@@ -32,7 +33,7 @@ func New(c *Config) (*Flow, error) {
 	return f, nil
 }
 
-func (f *Flow) ProcessGCREvent(ctx context.Context, e gcrevent.Event) error {
+func (f *Flow) ProcessGCREvent(ctx context.Context, e gcrevent.Event, quote bool) error {
 	if e.Action != gcrevent.ActionInsert {
 		return nil
 	}
@@ -49,6 +50,10 @@ func (f *Flow) ProcessGCREvent(ctx context.Context, e gcrevent.Event) error {
 
 	if image == "" || version == "" {
 		return fmt.Errorf("image format invalid: %s", *e.Tag)
+	}
+
+	if quote {
+		version = strconv.Quote(version)
 	}
 
 	return f.processImage(ctx, image, version)
