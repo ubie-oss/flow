@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -38,7 +39,14 @@ var (
 	f *flow.Flow
 )
 
+var (
+	q *bool
+)
+
 func main() {
+	q = flag.Bool("q", true, "if true, the version is quoted. Default is true.")
+	flag.Parse()
+
 	cfg, err := getConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Cloud not read the file:%s.\n", err)
@@ -101,7 +109,7 @@ func handlePubSubMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = f.ProcessGCREvent(ctx, event)
+	err = f.ProcessGCREvent(ctx, event, *q)
 	log.Printf("process: %s", err)
 
 	res := &Response{
