@@ -47,9 +47,16 @@ func (f *Flow) processImage(ctx context.Context, image, version string) error {
 	return nil
 }
 
+func (f *Flow) getGitbotClient(ctx context.Context) *github.Client {
+	if f.useApp {
+		return gitbot.NewGitHubClientWithApp(ctx, *f.githubAppID, *f.githubAppInstlationID, *f.githubAppPrivateKeyPath)
+	}
+	return gitbot.NewGitHubClient(ctx, *f.githubToken)
+}
+
 func (f *Flow) process(ctx context.Context, app *Application, version string) PullRequests {
 	var prs PullRequests
-	client := gitbot.NewGitHubClient(ctx, f.githubToken)
+	client := f.getGitbotClient(ctx)
 
 	for _, manifest := range app.Manifests {
 		if !shouldProcess(manifest, version) {

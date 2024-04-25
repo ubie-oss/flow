@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/sakajunquality/cloud-pubsub-events/gcrevent"
@@ -15,18 +16,45 @@ var (
 )
 
 type Flow struct {
-	Env         string
-	githubToken string
+	Env                     string
+	useApp                  bool
+	githubToken             *string
+	githubAppID             *int64
+	githubAppInstlationID   *int64
+	githubAppPrivateKeyPath *string
 }
 
 func New(c *Config) (*Flow, error) {
 	cfg = c
-	f := &Flow{
-		githubToken: os.Getenv("FLOW_GITHUB_TOKEN"),
+	f := &Flow{}
+
+	githubToken := os.Getenv("FLOW_GITHUB_TOKEN")
+	githubAppID := os.Getenv("FLOW_GITHUB_APP_ID")
+	githubAppInstlationID := os.Getenv("FLOW_GITHUB_APP_INSTALLATION_ID")
+	githubAppPrivateKeyPath := os.Getenv("FLOW_GITHUB_APP_PRIVATE_KEY_PATH")
+
+	f.githubToken = &githubToken
+
+	if githubAppID != "" {
+		f.useApp = true
+
+		githubAppIDInt, err := strconv.ParseInt(githubAppID, 10, 64)
+		if err != nil {
+			return nil, errors.New("invalid value for FLOW_GITHUB_APP_ID")
+		}
+		f.githubAppID = &githubAppIDInt
+
+		githubAppInstlationIDInt, err := strconv.ParseInt(githubAppInstlationID, 10, 64)
+		if err != nil {
+			return nil, errors.New("invalid value for FLOW_GITHUB_APP_INSTALLATION_ID")
+		}
+		f.githubAppInstlationID = &githubAppInstlationIDInt
+
+		f.githubAppPrivateKeyPath = &githubAppPrivateKeyPath
 	}
 
-	if f.githubToken == "" {
-		return nil, errors.New("you need to specify a non-empty value for FLOW_GITHUB_TOKEN")
+	if !f.useApp && f.githubToken == nil {
+		return nil, errors.New("you need to specify a non-empty value for FLOW_GITHUB_TOKEN if you don't specify FLOW_GITHUB_APP_ID")
 	}
 
 	return f, nil
