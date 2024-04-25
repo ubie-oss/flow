@@ -1,4 +1,4 @@
-module github.com/sakajunquality/flow/v4
+module github.com/ubie-oss/flow/v4
 
 require (
 	github.com/GoogleCloudPlatform/berglas v1.0.3
