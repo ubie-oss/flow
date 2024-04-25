@@ -10,7 +10,7 @@ import (
 
 	"github.com/dlclark/regexp2"
 	"github.com/google/go-github/v57/github"
-	"github.com/sakajunquality/flow/v4/gitbot"
+	"github.com/ubie-oss/flow/v4/gitbot"
 )
 
 type PullRequests []PullRequest
