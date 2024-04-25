@@ -1,0 +1,20 @@
+name: Publish nightly Docker image
+on:
+  push:
+    branches:
+    - main
+jobs:
+  push:
+    name: Push Docker image to GitHub Docker Registry
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: docker/login-action@v3
+      with:
+        registry: docker.pkg.github.com
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - uses: docker/build-push-action@v5
+      with:
+        push: true
+        tags: docker.pkg.github.com/ubie-oss/flow/flow:latest
