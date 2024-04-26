@@ -16,8 +16,6 @@ import (
 	"github.com/ubie-oss/flow/v4/flow"
 
 	"gopkg.in/yaml.v3"
-
-	_ "github.com/GoogleCloudPlatform/berglas/pkg/auto"
 )
 
 // Response is a HTTP response
