@@ -16,12 +16,12 @@ var (
 )
 
 type Flow struct {
-	Env                     string
-	useApp                  bool
-	githubToken             *string
-	githubAppID             *int64
-	githubAppInstlationID   *int64
-	githubAppPrivateKeyPath *string
+	Env                   string
+	useApp                bool
+	githubToken           *string
+	githubAppID           *int64
+	githubAppInstlationID *int64
+	githubAppPrivateKey   *string
 }
 
 func New(c *Config) (*Flow, error) {
@@ -31,7 +31,7 @@ func New(c *Config) (*Flow, error) {
 	githubToken := os.Getenv("FLOW_GITHUB_TOKEN")
 	githubAppID := os.Getenv("FLOW_GITHUB_APP_ID")
 	githubAppInstlationID := os.Getenv("FLOW_GITHUB_APP_INSTALLATION_ID")
-	githubAppPrivateKeyPath := os.Getenv("FLOW_GITHUB_APP_PRIVATE_KEY_PATH")
+	githubAppPrivateKey := os.Getenv("FLOW_GITHUB_APP_PRIVATE_KEY")
 
 	f.githubToken = &githubToken
 
@@ -50,7 +50,7 @@ func New(c *Config) (*Flow, error) {
 		}
 		f.githubAppInstlationID = &githubAppInstlationIDInt
 
-		f.githubAppPrivateKeyPath = &githubAppPrivateKeyPath
+		f.githubAppPrivateKey = &githubAppPrivateKey
 	}
 
 	if !f.useApp && f.githubToken == nil {
