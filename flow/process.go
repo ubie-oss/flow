@@ -49,7 +49,7 @@ func (f *Flow) processImage(ctx context.Context, image, version string) error {
 
 func (f *Flow) getGitbotClient(ctx context.Context) *github.Client {
 	if f.useApp {
-		return gitbot.NewGitHubClientWithApp(ctx, *f.githubAppID, *f.githubAppInstlationID, *f.githubAppPrivateKeyPath)
+		return gitbot.NewGitHubClientWithApp(ctx, *f.githubAppID, *f.githubAppInstlationID, *f.githubAppPrivateKey)
 	}
 	return gitbot.NewGitHubClient(ctx, *f.githubToken)
 }

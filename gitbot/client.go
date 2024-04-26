@@ -17,9 +17,9 @@ func NewGitHubClient(ctx context.Context, token string) *github.Client {
 	return github.NewClient(tc)
 }
 
-func NewGitHubClientWithApp(ctx context.Context, appID, installationID int64, privateKeyPath string) *github.Client {
+func NewGitHubClientWithApp(ctx context.Context, appID, installationID int64, privateKey string) *github.Client {
 	tr := http.DefaultTransport
-	itr, err := ghinstallation.NewKeyFromFile(tr, appID, installationID, privateKeyPath)
+	itr, err := ghinstallation.New(tr, appID, installationID, []byte(privateKey))
 	if err != nil {
 		log.Fatal(err)
 	}
