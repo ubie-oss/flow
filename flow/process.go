@@ -73,7 +73,10 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 			})
 			release.MakeChangeFunc(ctx, client, filePath, versionRewriteRegex, func(m regexp2.Match) string {
 				oldVersionSet[m.GroupByName("version").String()] = nil
-				return fmt.Sprintf("version: \"%s\"", version)
+				if f.enableVersionQuote {
+					return fmt.Sprintf("version: \"%s\"", version)
+				}
+				return fmt.Sprintf("version: %s", version)
 			})
 
 			for _, key := range app.AdditionalRewriteKeys {

@@ -22,6 +22,7 @@ type Flow struct {
 	githubAppID           *int64
 	githubAppInstlationID *int64
 	githubAppPrivateKey   *string
+	enableVersionQuote    bool
 }
 
 func New(c *Config) (*Flow, error) {
@@ -32,6 +33,7 @@ func New(c *Config) (*Flow, error) {
 	githubAppID := os.Getenv("FLOW_GITHUB_APP_ID")
 	githubAppInstlationID := os.Getenv("FLOW_GITHUB_APP_INSTALLATION_ID")
 	githubAppPrivateKey := os.Getenv("FLOW_GITHUB_APP_PRIVATE_KEY")
+	f.enableVersionQuote = os.Getenv("FLOW_ENABLE_VERSION_QUOTE") == "true"
 
 	f.githubToken = &githubToken
 
