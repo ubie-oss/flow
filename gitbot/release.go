@@ -21,7 +21,7 @@ type Release interface {
 	MakeChange(ctx context.Context, client *github.Client, filePath, regexText, changedText string)
 	MakeChangeFunc(ctx context.Context, client *github.Client, filePath, regexText string, evaluator regexp2.MatchEvaluator)
 	Commit(ctx context.Context, client *github.Client) error
-	CreatePR(ctx context.Context, client *github.Client) (*string, error)
+	CreatePR(ctx context.Context, client *github.Client, assignee *github.User) (*string, error)
 
 	GetRepo() *Repo
 	SetRepo(repo Repo)
@@ -85,8 +85,8 @@ func (r *release) Commit(ctx context.Context, client *github.Client) error {
 	return r.pushCommit(ctx, client, ref, tree)
 }
 
-func (r *release) CreatePR(ctx context.Context, client *github.Client) (*string, error) {
-	return r.createPR(ctx, client)
+func (r *release) CreatePR(ctx context.Context, client *github.Client, assignee *github.User) (*string, error) {
+	return r.createPR(ctx, client, assignee)
 }
 
 func (r *release) GetRepo() *Repo            { return &r.repo }

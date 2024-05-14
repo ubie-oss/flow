@@ -97,17 +97,22 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 		for oldVersion := range oldVersionSet {
 			oldVersions = append(oldVersions, oldVersion)
 		}
+
+		actor, err := getGitHubActor(ctx, client, app, version)
+		if err != nil {
+			log.Printf("Skip getting actor because it may not be a release: %s", err)
+		}
+
 		body := generateBody(ctx, client, app, manifest, version, oldVersions)
 		release.SetBody(body)
 
-		err := release.Commit(ctx, client)
-		if err != nil {
+		if err := release.Commit(ctx, client); err != nil {
 			log.Printf("Error Commiting: %s", err)
 			continue
 		}
 
 		if !manifest.CommitWithoutPR {
-			url, err := release.CreatePR(ctx, client)
+			url, err := release.CreatePR(ctx, client, actor)
 			if err != nil {
 				log.Printf("Error Submitting PR: %s", err)
 				continue
@@ -119,6 +124,14 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 		}
 	}
 	return prs
+}
+
+func getGitHubActor(ctx context.Context, client *github.Client, app *Application, version string) (*github.User, error) {
+	release, _, err := client.Repositories.GetReleaseByTag(ctx, app.SourceOwner, app.SourceName, version)
+	if err != nil {
+		return nil, err
+	}
+	return release.Author, nil
 }
 
 func shouldProcess(m Manifest, version string) bool {

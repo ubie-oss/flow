@@ -72,7 +72,7 @@ func (r *release) pushCommit(ctx context.Context, client *github.Client, ref *gi
 	return err
 }
 
-func (r *release) createPR(ctx context.Context, client *github.Client) (*string, error) {
+func (r *release) createPR(ctx context.Context, client *github.Client, assignee *github.User) (*string, error) {
 	newPR := &github.NewPullRequest{
 		Title:               github.String(r.message),
 		Head:                github.String(r.repo.CommitBranch),
@@ -90,7 +90,12 @@ func (r *release) createPR(ctx context.Context, client *github.Client) (*string,
 	if err != nil {
 		log.Printf("Error Adding Lables: %s", err)
 	}
-
+	if assignee != nil {
+		_, _, err := client.Issues.AddAssignees(ctx, r.repo.SourceOwner, r.repo.SourceRepo, *pr.Number, []string{assignee.GetLogin()})
+		if err != nil {
+			log.Printf("Failed to add Assignee(%s), but continue: %s", assignee.GetLogin(), err)
+		}
+	}
 	return github.String(pr.GetHTMLURL()), nil
 }
 
