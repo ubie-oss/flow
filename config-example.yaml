@@ -38,4 +38,3 @@ git_author:
   email: test@sakajunquality.dev
 
 default_branch: main
-slack_notify_channel: "#deploy"
