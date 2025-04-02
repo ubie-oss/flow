@@ -23,6 +23,7 @@ type Flow struct {
 	githubAppInstlationID *int64
 	githubAppPrivateKey   *string
 	enableVersionQuote    bool
+	automerge             bool
 }
 
 func New(c *Config) (*Flow, error) {
@@ -60,6 +61,10 @@ func New(c *Config) (*Flow, error) {
 	}
 
 	return f, nil
+}
+
+func (f *Flow) SetAutomerge(automerge bool) {
+	f.automerge = automerge
 }
 
 func (f *Flow) ProcessGCREvent(ctx context.Context, e gcrevent.Event) error {

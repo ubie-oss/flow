@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -37,13 +38,16 @@ var (
 )
 
 func main() {
+	automergeFlag := flag.Bool("automerge", false, "Automatically merge PRs after creation")
+	flag.Parse()
+
 	cfg, err := getConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Cloud not read the file:%s.\n", err)
 		os.Exit(1)
 	}
 
-	f, err = initFlow(cfg)
+	f, err = initFlow(cfg, *automergeFlag)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing the config %s.\n", err)
 		os.Exit(1)
@@ -66,13 +70,20 @@ func getConfig() ([]byte, error) {
 	return os.ReadFile(os.Getenv("FLOW_CONFIG_PATH"))
 }
 
-func initFlow(config []byte) (*flow.Flow, error) {
+func initFlow(config []byte, automerge bool) (*flow.Flow, error) {
 	cfg := new(flow.Config)
 	if err := yaml.Unmarshal(config, cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "yaml.Unmarshal error:%v.\n", err)
 		os.Exit(1)
 	}
-	return flow.New(cfg)
+	f, err := flow.New(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	f.SetAutomerge(automerge)
+
+	return f, nil
 }
 
 func handlePubSubMessage(w http.ResponseWriter, r *http.Request) {
