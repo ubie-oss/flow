@@ -128,7 +128,16 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 					continue
 				}
 
-				_, _, err = client.PullRequests.Merge(ctx, app.ManifestOwner, app.ManifestName, prNumber, "Auto-merged by flow", &github.PullRequestOptions{
+				// Extract repository owner and name from the URL
+				// URL format: https://github.com/{owner}/{repo}/pull/{number}
+				if len(parts) < 5 {
+					log.Printf("Invalid PR URL format: %s", *url)
+					continue
+				}
+				repoOwner := parts[len(parts)-4]
+				repoName := parts[len(parts)-3]
+
+				_, _, err = client.PullRequests.Merge(ctx, repoOwner, repoName, prNumber, "Auto-merged by flow", &github.PullRequestOptions{
 					MergeMethod: "squash",
 				})
 				if err != nil {
