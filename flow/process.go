@@ -120,7 +120,7 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 				url: *url,
 			})
 
-			if f.automerge && url != nil {
+			if f.enableAutoMerge && url != nil {
 				parts := strings.Split(*url, "/")
 				prNumber, err := strconv.Atoi(parts[len(parts)-1])
 				if err != nil {
