@@ -1,4 +1,4 @@
-FROM golang:1.23 as go
+FROM golang:1.24.2 as go
 FROM gcr.io/distroless/base-debian12 as run
 
 FROM go as build
