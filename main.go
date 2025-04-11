@@ -72,7 +72,12 @@ func initFlow(config []byte) (*flow.Flow, error) {
 		fmt.Fprintf(os.Stderr, "yaml.Unmarshal error:%v.\n", err)
 		os.Exit(1)
 	}
-	return flow.New(cfg)
+	f, err := flow.New(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return f, nil
 }
 
 func handlePubSubMessage(w http.ResponseWriter, r *http.Request) {

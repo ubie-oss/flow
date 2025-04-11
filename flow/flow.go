@@ -23,6 +23,7 @@ type Flow struct {
 	githubAppInstlationID *int64
 	githubAppPrivateKey   *string
 	enableVersionQuote    bool
+	enableAutoMerge       bool
 }
 
 func New(c *Config) (*Flow, error) {
@@ -34,7 +35,7 @@ func New(c *Config) (*Flow, error) {
 	githubAppInstlationID := os.Getenv("FLOW_GITHUB_APP_INSTALLATION_ID")
 	githubAppPrivateKey := os.Getenv("FLOW_GITHUB_APP_PRIVATE_KEY")
 	f.enableVersionQuote = os.Getenv("FLOW_ENABLE_VERSION_QUOTE") == "true"
-
+	f.enableAutoMerge = os.Getenv("FLOW_ENABLE_AUTO_MERGE") == "true"
 	f.githubToken = &githubToken
 
 	if githubAppID != "" {

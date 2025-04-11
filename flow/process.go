@@ -119,6 +119,24 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 				env: manifest.Env,
 				url: *url,
 			})
+
+			if f.enableAutoMerge && url != nil {
+				parts := strings.Split(*url, "/")
+				prNumber, err := strconv.Atoi(parts[len(parts)-1])
+				if err != nil {
+					log.Printf("Error extracting PR number from URL %s: %s", *url, err)
+					continue
+				}
+
+				_, _, err = client.PullRequests.Merge(ctx, app.ManifestOwner, app.ManifestName, prNumber, "Auto-merged by flow", &github.PullRequestOptions{
+					MergeMethod: "squash",
+				})
+				if err != nil {
+					log.Printf("Error merging PR #%d: %s", prNumber, err)
+				} else {
+					log.Printf("Successfully auto-merged PR #%d", prNumber)
+				}
+			}
 		}
 	}
 	return prs
