@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -18,12 +20,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Response is a HTTP response
+// Response represents a HTTP response
 type Response struct {
 	Status int `json:"status"`
 }
 
-// PubSubMessage is a Push message from Cloud Pub/Sub
+// PubSubMessage represents a Push message from Cloud Pub/Sub
 type PubSubMessage struct {
 	Message struct {
 		Data []byte `json:"data,omitempty"`
@@ -33,84 +35,120 @@ type PubSubMessage struct {
 }
 
 var (
-	f *flow.Flow
+	// flowInstance is the global Flow instance
+	flowInstance *flow.Flow
+	logger       = log.New(os.Stderr, "flow: ", log.LstdFlags|log.Lshortfile)
 )
 
 func main() {
+	// Create a context that will be canceled on SIGINT or SIGTERM
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// Initialize configuration
 	cfg, err := getConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Cloud not read the file:%s.\n", err)
-		os.Exit(1)
+		logger.Fatalf("Failed to read configuration: %v", err)
 	}
 
-	f, err = initFlow(cfg)
+	// Initialize Flow instance
+	flowInstance, err = initFlow(cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing the config %s.\n", err)
-		os.Exit(1)
+		logger.Fatalf("Failed to initialize Flow: %v", err)
 	}
 
-	r := chi.NewRouter()
-
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Logger)
-	r.Post("/", handlePubSubMessage)
-
+	// Get port from environment or use default
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	log.Fatal(http.ListenAndServe(":"+port, r))
+
+	// Setup HTTP server
+	server := setupServer(port)
+
+	// Start server in a goroutine
+	go func() {
+		logger.Printf("Starting server on port %s", port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatalf("Server error: %v", err)
+		}
+	}()
+
+	// Wait for context cancellation
+	<-ctx.Done()
+
+	// Create shutdown context with timeout
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Attempt graceful shutdown
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Printf("Error during server shutdown: %v", err)
+	}
 }
 
+// getConfig reads the configuration file specified by FLOW_CONFIG_PATH
 func getConfig() ([]byte, error) {
-	return os.ReadFile(os.Getenv("FLOW_CONFIG_PATH"))
+	configPath := os.Getenv("FLOW_CONFIG_PATH")
+	if configPath == "" {
+		return nil, fmt.Errorf("FLOW_CONFIG_PATH environment variable not set")
+	}
+	return os.ReadFile(configPath)
 }
 
+// initFlow initializes a new Flow instance with the given configuration
 func initFlow(config []byte) (*flow.Flow, error) {
 	cfg := new(flow.Config)
 	if err := yaml.Unmarshal(config, cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "yaml.Unmarshal error:%v.\n", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to parse configuration: %w", err)
 	}
-	f, err := flow.New(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return f, nil
+	return flow.New(cfg)
 }
 
+// setupServer configures and returns a new HTTP server
+func setupServer(port string) *http.Server {
+	r := chi.NewRouter()
+
+	// Add middleware
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(60 * time.Second))
+
+	// Add routes
+	r.Post("/", handlePubSubMessage)
+
+	return &http.Server{
+		Addr:    ":" + port,
+		Handler: r,
+	}
+}
+
+// handlePubSubMessage handles incoming Pub/Sub messages
 func handlePubSubMessage(w http.ResponseWriter, r *http.Request) {
-	ctx := context.TODO()
+	ctx := r.Context()
 
 	var m PubSubMessage
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("iotuil.ReadAll: %v", err)
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		return
-	}
-
-	if err := json.Unmarshal(body, &m); err != nil {
-		log.Printf("json.Unmarshal: %v", err)
+	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+		logger.Printf("Failed to decode request body: %v", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
 	event, err := gcrevent.ParseMessage(m.Message.Data)
 	if err != nil {
-		log.Printf("gcrevent.ParseMessage: %v", err)
+		logger.Printf("Failed to parse Pub/Sub message: %v", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	err = f.ProcessGCREvent(ctx, event)
-	if err != nil {
-		log.Printf("faild to process: %s", err)
+	if err := flowInstance.ProcessGCREvent(ctx, event); err != nil {
+		logger.Printf("Failed to process GCR event: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 
-	res := &Response{
+	render.JSON(w, r, &Response{
 		Status: http.StatusOK,
-	}
-	render.JSON(w, r, res)
+	})
 }
