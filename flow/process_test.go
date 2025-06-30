@@ -28,21 +28,21 @@ func TestNewRelease(t *testing.T) {
 	}
 	version := "bar"
 
-	r := newRelease(app, manifest, version)
+	r := newRelease(app, manifest, version, "1")
 	assert.Equal(t, "Rollout production alice bar", r.GetMessage())
-	assert.Equal(t, "rollout/production-alice-bar", r.GetRepo().CommitBranch)
+	assert.Equal(t, "rollout/production-alice-bar-1", r.GetRepo().CommitBranch)
 	assert.Equal(t, "master", r.GetRepo().BaseBranch)
 	assert.Equal(t, []string{"alice", "production"}, r.GetLabels())
 
 	manifest.BaseBranch = "production"
-	r2 := newRelease(app, manifest, version)
+	r2 := newRelease(app, manifest, version, "1")
 	assert.Equal(t, "Rollout production alice bar", r2.GetMessage())
-	assert.Equal(t, "rollout/production-alice-bar", r2.GetRepo().CommitBranch)
+	assert.Equal(t, "rollout/production-alice-bar-1", r2.GetRepo().CommitBranch)
 	assert.Equal(t, "production", r2.GetRepo().BaseBranch)
 	assert.Equal(t, []string{"alice", "production"}, r2.GetLabels())
 
 	manifest.CommitWithoutPR = true
-	r3 := newRelease(app, manifest, version)
+	r3 := newRelease(app, manifest, version, "1")
 	assert.Equal(t, "Rollout production alice bar", r3.GetMessage())
 	assert.Equal(t, "production", r3.GetRepo().CommitBranch)
 	assert.Equal(t, "production", r3.GetRepo().BaseBranch)
@@ -57,29 +57,29 @@ func TestNewRelease(t *testing.T) {
 		BaseBranch: "dev",
 	}
 
-	r4 := newRelease(app2, manifest2, version)
+	r4 := newRelease(app2, manifest2, version, "1")
 	assert.Equal(t, "Rollout dev 123 bar", r4.GetMessage())
-	assert.Equal(t, "rollout/dev-123-bar", r4.GetRepo().CommitBranch)
+	assert.Equal(t, "rollout/dev-123-bar-1", r4.GetRepo().CommitBranch)
 	assert.Equal(t, "dev", r4.GetRepo().BaseBranch)
 
 	manifest2.CommitWithoutPR = true
-	r5 := newRelease(app2, manifest2, version)
+	r5 := newRelease(app2, manifest2, version, "1")
 	assert.Equal(t, "Rollout dev 123 bar", r5.GetMessage())
 	assert.Equal(t, "dev", r5.GetRepo().CommitBranch)
 	assert.Equal(t, "dev", r5.GetRepo().BaseBranch)
 
 	manifest2.Labels = []string{"bob"}
-	r6 := newRelease(app, manifest2, version)
+	r6 := newRelease(app, manifest2, version, "1")
 	assert.Equal(t, []string{"alice", "dev", "bob"}, r6.GetLabels())
 
 	cfg.DefaultBranch = "main"
 	manifest.BaseBranch = ""
 	app.ManifestBaseBranch = ""
-	r7 := newRelease(app, manifest, version)
+	r7 := newRelease(app, manifest, version, "1")
 	assert.Equal(t, "main", r7.GetRepo().BaseBranch)
 
 	manifest.BaseBranch = "master"
-	r8 := newRelease(app, manifest, version)
+	r8 := newRelease(app, manifest, version, "1")
 	assert.Equal(t, "master", r8.GetRepo().BaseBranch)
 }
 
@@ -99,7 +99,7 @@ func TestNewReleaseForDefaultOrg(t *testing.T) {
 	}
 	version := "1234"
 
-	r := newRelease(app, manifest, version)
+	r := newRelease(app, manifest, version, "1")
 
 	assert.Equal(t, "foo-inc", r.GetRepo().SourceOwner)
 	assert.Equal(t, "bar-repo", r.GetRepo().SourceRepo)
@@ -107,14 +107,14 @@ func TestNewReleaseForDefaultOrg(t *testing.T) {
 	app.ManifestOwner = "abc-inc"
 	app.ManifestName = "xyz-repo"
 
-	r2 := newRelease(app, manifest, version)
+	r2 := newRelease(app, manifest, version, "1")
 	assert.Equal(t, "abc-inc", r2.GetRepo().SourceOwner)
 	assert.Equal(t, "xyz-repo", r2.GetRepo().SourceRepo)
 
 	manifest.ManifestOwner = "another-owner"
 	manifest.ManifestName = "another-name"
 
-	r3 := newRelease(app, manifest, version)
+	r3 := newRelease(app, manifest, version, "1")
 	assert.Equal(t, "another-owner", r3.GetRepo().SourceOwner)
 	assert.Equal(t, "another-name", r3.GetRepo().SourceRepo)
 }

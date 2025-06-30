@@ -62,87 +62,89 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 		if !shouldProcess(manifest, version) {
 			continue
 		}
+		for attempt := 1; attempt <= f.maxRetries; attempt++ {
+			release := newRelease(*app, manifest, version, fmt.Sprintf("%d", attempt))
 
-		release := newRelease(*app, manifest, version)
-
-		oldVersionSet := map[string]interface{}{}
-		for _, filePath := range manifest.Files {
-			release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(imageRewriteRegexTemplate, app.Image), func(m regexp2.Match) string {
-				oldVersionSet[m.GroupByName("version").String()] = nil
-				return fmt.Sprintf("%s:%s", app.Image, version)
-			})
-			release.MakeChangeFunc(ctx, client, filePath, versionRewriteRegex, func(m regexp2.Match) string {
-				oldVersionSet[m.GroupByName("version").String()] = nil
-				if f.enableVersionQuote {
-					return fmt.Sprintf("version: \"%s\"", version)
-				}
-				return fmt.Sprintf("version: %s", version)
-			})
-
-			for _, key := range app.AdditionalRewriteKeys {
-				release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(additionalRewriteKeysRegexTemplate, key), func(m regexp2.Match) string {
+			oldVersionSet := map[string]interface{}{}
+			for _, filePath := range manifest.Files {
+				release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(imageRewriteRegexTemplate, app.Image), func(m regexp2.Match) string {
+					oldVersionSet[m.GroupByName("version").String()] = nil
+					return fmt.Sprintf("%s:%s", app.Image, version)
+				})
+				release.MakeChangeFunc(ctx, client, filePath, versionRewriteRegex, func(m regexp2.Match) string {
 					oldVersionSet[m.GroupByName("version").String()] = nil
 					if f.enableVersionQuote {
-						return fmt.Sprintf("%s: \"%s\"", key, version)
+						return fmt.Sprintf("version: \"%s\"", version)
 					}
-					return fmt.Sprintf("%s: %s", key, version)
+					return fmt.Sprintf("version: %s", version)
 				})
+
+				for _, key := range app.AdditionalRewriteKeys {
+					release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(additionalRewriteKeysRegexTemplate, key), func(m regexp2.Match) string {
+						oldVersionSet[m.GroupByName("version").String()] = nil
+						if f.enableVersionQuote {
+							return fmt.Sprintf("%s: \"%s\"", key, version)
+						}
+						return fmt.Sprintf("%s: %s", key, version)
+					})
+				}
+				for _, prefix := range app.AdditionalRewritePrefix {
+					release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(additionalRewritePrefixRegexTemplate, prefix), func(m regexp2.Match) string {
+						oldVersionSet[m.GroupByName("version").String()] = nil
+						return fmt.Sprintf("%s%s", prefix, version)
+					})
+				}
 			}
-			for _, prefix := range app.AdditionalRewritePrefix {
-				release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(additionalRewritePrefixRegexTemplate, prefix), func(m regexp2.Match) string {
-					oldVersionSet[m.GroupByName("version").String()] = nil
-					return fmt.Sprintf("%s%s", prefix, version)
-				})
+
+			oldVersions := []string{}
+			for oldVersion := range oldVersionSet {
+				oldVersions = append(oldVersions, oldVersion)
 			}
-		}
+			body := generateBody(ctx, client, app, manifest, version, oldVersions)
+			release.SetBody(body)
 
-		oldVersions := []string{}
-		for oldVersion := range oldVersionSet {
-			oldVersions = append(oldVersions, oldVersion)
-		}
-		body := generateBody(ctx, client, app, manifest, version, oldVersions)
-		release.SetBody(body)
-
-		err := release.Commit(ctx, client)
-		if err != nil {
-			log.Printf("Error Commiting: %s", err)
-			continue
-		}
-
-		if !manifest.CommitWithoutPR {
-			url, err := release.CreatePR(ctx, client)
+			err := release.Commit(ctx, client)
 			if err != nil {
-				log.Printf("Error Submitting PR: %s", err)
+				log.Printf("Error Commiting: %s", err)
 				continue
 			}
-			prs = append(prs, PullRequest{
-				env: manifest.Env,
-				url: *url,
-			})
 
-			if f.enableAutoMerge && url != nil {
-				parts := strings.Split(*url, "/")
-				// Extract repository owner and name from the URL
-				// URL format: https://github.com/{owner}/{repo}/pull/{number}
-				if len(parts) < 5 {
-					log.Printf("Invalid PR URL format: %s", *url)
-					continue
-				}
-				prNumber, err := strconv.Atoi(parts[len(parts)-1])
+			if !manifest.CommitWithoutPR {
+				url, err := release.CreatePR(ctx, client)
 				if err != nil {
-					log.Printf("Error extracting PR number from URL %s: %s", *url, err)
+					log.Printf("Error Submitting PR: %s", err)
 					continue
 				}
-				repoOwner := parts[len(parts)-4]
-				repoName := parts[len(parts)-3]
-
-				_, _, err = client.PullRequests.Merge(ctx, repoOwner, repoName, prNumber, "Auto-merged by flow", &github.PullRequestOptions{
-					MergeMethod: "squash",
+				prs = append(prs, PullRequest{
+					env: manifest.Env,
+					url: *url,
 				})
-				if err != nil {
-					log.Printf("Error merging PR #%d: %s", prNumber, err)
-				} else {
-					log.Printf("Successfully auto-merged PR #%d", prNumber)
+
+				if f.enableAutoMerge && url != nil {
+					parts := strings.Split(*url, "/")
+					// Extract repository owner and name from the URL
+					// URL format: https://github.com/{owner}/{repo}/pull/{number}
+					if len(parts) < 5 {
+						log.Printf("Invalid PR URL format: %s", *url)
+						continue
+					}
+					prNumber, err := strconv.Atoi(parts[len(parts)-1])
+					if err != nil {
+						log.Printf("Error extracting PR number from URL %s: %s", *url, err)
+						continue
+					}
+					repoOwner := parts[len(parts)-4]
+					repoName := parts[len(parts)-3]
+
+					_, _, err = client.PullRequests.Merge(ctx, repoOwner, repoName, prNumber, "Auto-merged by flow", &github.PullRequestOptions{
+						MergeMethod: "squash",
+					})
+					if err != nil {
+						log.Printf("Error merging PR #%d: %s", prNumber, err)
+						continue
+					} else {
+						log.Printf("Successfully auto-merged PR #%d", prNumber)
+					}
 				}
 			}
 		}
@@ -177,8 +179,8 @@ func shouldProcess(m Manifest, version string) bool {
 	return false
 }
 
-func newRelease(app Application, manifest Manifest, version string) gitbot.Release {
-	branchName := getBranchName(app, manifest, version)
+func newRelease(app Application, manifest Manifest, version, branchSuffix string) gitbot.Release {
+	branchName := fmt.Sprintf("%s-%s", getBranchName(app, manifest, version), branchSuffix)
 	message := getCommitMessage(app, manifest, version)
 
 	// Use base a branch configured in app level
