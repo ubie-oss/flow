@@ -24,6 +24,7 @@ type Flow struct {
 	githubAppPrivateKey   *string
 	enableVersionQuote    bool
 	enableAutoMerge       bool
+	maxRetries            int
 }
 
 func New(c *Config) (*Flow, error) {
@@ -37,6 +38,17 @@ func New(c *Config) (*Flow, error) {
 	f.enableVersionQuote = os.Getenv("FLOW_ENABLE_VERSION_QUOTE") == "true"
 	f.enableAutoMerge = os.Getenv("FLOW_ENABLE_AUTO_MERGE") == "true"
 	f.githubToken = &githubToken
+
+	// Set maxRetries: config file > environment variable > default (3)
+	f.maxRetries = 3
+	if c.MaxRetries > 0 {
+		f.maxRetries = c.MaxRetries
+	}
+	if maxRetriesEnv := os.Getenv("FLOW_MAX_RETRIES"); maxRetriesEnv != "" {
+		if maxRetriesInt, err := strconv.Atoi(maxRetriesEnv); err == nil && maxRetriesInt > 0 {
+			f.maxRetries = maxRetriesInt
+		}
+	}
 
 	if githubAppID != "" {
 		f.useApp = true

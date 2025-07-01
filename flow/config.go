@@ -7,6 +7,7 @@ type Config struct {
 	DefaultManifestOwner string `yaml:"default_manifest_owner"`
 	DefaultManifestName  string `yaml:"default_manifest_name"`
 	DefaultBranch        string `yaml:"default_branch"`
+	MaxRetries           int    `yaml:"max_retries"`
 }
 
 type Application struct {
