@@ -147,6 +147,7 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 					}
 				}
 			}
+			break
 		}
 	}
 	return prs
