@@ -63,93 +63,101 @@ func (f *Flow) process(ctx context.Context, app *Application, version string) Pu
 			continue
 		}
 		for attempt := 1; attempt <= f.maxRetries; attempt++ {
-			release := newRelease(*app, manifest, version, fmt.Sprintf("%d", attempt))
-
-			oldVersionSet := map[string]interface{}{}
-			for _, filePath := range manifest.Files {
-				release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(imageRewriteRegexTemplate, app.Image), func(m regexp2.Match) string {
-					oldVersionSet[m.GroupByName("version").String()] = nil
-					return fmt.Sprintf("%s:%s", app.Image, version)
-				})
-				release.MakeChangeFunc(ctx, client, filePath, versionRewriteRegex, func(m regexp2.Match) string {
-					oldVersionSet[m.GroupByName("version").String()] = nil
-					if f.enableVersionQuote {
-						return fmt.Sprintf("version: \"%s\"", version)
-					}
-					return fmt.Sprintf("version: %s", version)
-				})
-
-				for _, key := range app.AdditionalRewriteKeys {
-					release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(additionalRewriteKeysRegexTemplate, key), func(m regexp2.Match) string {
-						oldVersionSet[m.GroupByName("version").String()] = nil
-						if f.enableVersionQuote {
-							return fmt.Sprintf("%s: \"%s\"", key, version)
-						}
-						return fmt.Sprintf("%s: %s", key, version)
-					})
-				}
-				for _, prefix := range app.AdditionalRewritePrefix {
-					release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(additionalRewritePrefixRegexTemplate, prefix), func(m regexp2.Match) string {
-						oldVersionSet[m.GroupByName("version").String()] = nil
-						return fmt.Sprintf("%s%s", prefix, version)
-					})
-				}
-			}
-
-			oldVersions := []string{}
-			for oldVersion := range oldVersionSet {
-				oldVersions = append(oldVersions, oldVersion)
-			}
-			body := generateBody(ctx, client, app, manifest, version, oldVersions)
-			release.SetBody(body)
-
-			err := release.Commit(ctx, client)
-			if err != nil {
-				log.Printf("Error Commiting: %s", err)
-				continue
-			}
-
-			if !manifest.CommitWithoutPR {
-				url, err := release.CreatePR(ctx, client)
-				if err != nil {
-					log.Printf("Error Submitting PR: %s", err)
-					continue
-				}
-				prs = append(prs, PullRequest{
-					env: manifest.Env,
-					url: *url,
-				})
-
-				if f.enableAutoMerge && url != nil {
-					parts := strings.Split(*url, "/")
-					// Extract repository owner and name from the URL
-					// URL format: https://github.com/{owner}/{repo}/pull/{number}
-					if len(parts) < 5 {
-						log.Printf("Invalid PR URL format: %s", *url)
-						continue
-					}
-					prNumber, err := strconv.Atoi(parts[len(parts)-1])
-					if err != nil {
-						log.Printf("Error extracting PR number from URL %s: %s", *url, err)
-						continue
-					}
-					repoOwner := parts[len(parts)-4]
-					repoName := parts[len(parts)-3]
-
-					_, _, err = client.PullRequests.Merge(ctx, repoOwner, repoName, prNumber, "Auto-merged by flow", &github.PullRequestOptions{
-						MergeMethod: "squash",
-					})
-					if err != nil {
-						log.Printf("Error merging PR #%d: %s", prNumber, err)
-						continue
-					} else {
-						log.Printf("Successfully auto-merged PR #%d", prNumber)
-					}
-				}
+			err := f.processAttempt(ctx, client, app, manifest, version, attempt, &prs)
+			if err == nil {
+				break
 			}
 		}
 	}
 	return prs
+}
+
+func (f *Flow) processAttempt(ctx context.Context, client *github.Client, app *Application, manifest Manifest, version string, attempt int, prs *PullRequests) error {
+	release := newRelease(*app, manifest, version, fmt.Sprintf("%d", attempt))
+
+	oldVersionSet := map[string]interface{}{}
+	for _, filePath := range manifest.Files {
+		release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(imageRewriteRegexTemplate, app.Image), func(m regexp2.Match) string {
+			oldVersionSet[m.GroupByName("version").String()] = nil
+			return fmt.Sprintf("%s:%s", app.Image, version)
+		})
+		release.MakeChangeFunc(ctx, client, filePath, versionRewriteRegex, func(m regexp2.Match) string {
+			oldVersionSet[m.GroupByName("version").String()] = nil
+			if f.enableVersionQuote {
+				return fmt.Sprintf("version: \"%s\"", version)
+			}
+			return fmt.Sprintf("version: %s", version)
+		})
+
+		for _, key := range app.AdditionalRewriteKeys {
+			release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(additionalRewriteKeysRegexTemplate, key), func(m regexp2.Match) string {
+				oldVersionSet[m.GroupByName("version").String()] = nil
+				if f.enableVersionQuote {
+					return fmt.Sprintf("%s: \"%s\"", key, version)
+				}
+				return fmt.Sprintf("%s: %s", key, version)
+			})
+		}
+		for _, prefix := range app.AdditionalRewritePrefix {
+			release.MakeChangeFunc(ctx, client, filePath, fmt.Sprintf(additionalRewritePrefixRegexTemplate, prefix), func(m regexp2.Match) string {
+				oldVersionSet[m.GroupByName("version").String()] = nil
+				return fmt.Sprintf("%s%s", prefix, version)
+			})
+		}
+	}
+
+	oldVersions := []string{}
+	for oldVersion := range oldVersionSet {
+		oldVersions = append(oldVersions, oldVersion)
+	}
+	body := generateBody(ctx, client, app, manifest, version, oldVersions)
+	release.SetBody(body)
+
+	err := release.Commit(ctx, client)
+	if err != nil {
+		log.Printf("Error Commiting: %s", err)
+		return err
+	}
+
+	if !manifest.CommitWithoutPR {
+		url, err := release.CreatePR(ctx, client)
+		if err != nil {
+			log.Printf("Error Submitting PR: %s", err)
+			return err
+		}
+		*prs = append(*prs, PullRequest{
+			env: manifest.Env,
+			url: *url,
+		})
+
+		if f.enableAutoMerge && url != nil {
+			parts := strings.Split(*url, "/")
+			// Extract repository owner and name from the URL
+			// URL format: https://github.com/{owner}/{repo}/pull/{number}
+			if len(parts) < 5 {
+				log.Printf("Invalid PR URL format: %s", *url)
+				return fmt.Errorf("invalid PR URL format: %s", *url)
+			}
+			prNumber, err := strconv.Atoi(parts[len(parts)-1])
+			if err != nil {
+				log.Printf("Error extracting PR number from URL %s: %s", *url, err)
+				return fmt.Errorf("error extracting PR number from URL %s: %w", *url, err)
+			}
+			repoOwner := parts[len(parts)-4]
+			repoName := parts[len(parts)-3]
+
+			_, _, err = client.PullRequests.Merge(ctx, repoOwner, repoName, prNumber, "Auto-merged by flow", &github.PullRequestOptions{
+				MergeMethod: "squash",
+			})
+			if err != nil {
+				log.Printf("Error merging PR #%d: %s", prNumber, err)
+				return fmt.Errorf("error merging PR #%d: %w", prNumber, err)
+			} else {
+				log.Printf("Successfully auto-merged PR #%d", prNumber)
+			}
+		}
+	}
+	return nil
 }
 
 func shouldProcess(m Manifest, version string) bool {
