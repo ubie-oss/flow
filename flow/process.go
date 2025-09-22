@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -42,7 +42,7 @@ func (f *Flow) processImage(ctx context.Context, image, version string) error {
 	prs := f.process(ctx, app, version)
 
 	for _, pr := range prs {
-		log.Printf("Processed PR: %s\n", pr.url)
+		slog.Info("Processed PR", "url", pr.url)
 	}
 	return nil
 }
@@ -115,14 +115,14 @@ func (f *Flow) processAttempt(ctx context.Context, client *github.Client, app *A
 
 	err := release.Commit(ctx, client)
 	if err != nil {
-		log.Printf("Error Commiting: %s", err)
+		slog.Error("Error committing", "error", err)
 		return err
 	}
 
 	if !manifest.CommitWithoutPR {
 		url, err := release.CreatePR(ctx, client)
 		if err != nil {
-			log.Printf("Error Submitting PR: %s", err)
+			slog.Error("Error submitting PR", "error", err)
 			return err
 		}
 		*prs = append(*prs, PullRequest{
@@ -135,12 +135,12 @@ func (f *Flow) processAttempt(ctx context.Context, client *github.Client, app *A
 			// Extract repository owner and name from the URL
 			// URL format: https://github.com/{owner}/{repo}/pull/{number}
 			if len(parts) < 5 {
-				log.Printf("Invalid PR URL format: %s", *url)
+				slog.Error("Invalid PR URL format", "url", *url)
 				return fmt.Errorf("invalid PR URL format: %s", *url)
 			}
 			prNumber, err := strconv.Atoi(parts[len(parts)-1])
 			if err != nil {
-				log.Printf("Error extracting PR number from URL %s: %s", *url, err)
+				slog.Error("Error extracting PR number from URL", "url", *url, "error", err)
 				return fmt.Errorf("error extracting PR number from URL %s: %w", *url, err)
 			}
 			repoOwner := parts[len(parts)-4]
@@ -150,10 +150,10 @@ func (f *Flow) processAttempt(ctx context.Context, client *github.Client, app *A
 				MergeMethod: "squash",
 			})
 			if err != nil {
-				log.Printf("Error merging PR #%d: %s", prNumber, err)
+				slog.Error("Error merging PR", "pr_number", prNumber, "error", err)
 				return fmt.Errorf("error merging PR #%d: %w", prNumber, err)
 			} else {
-				log.Printf("Successfully auto-merged PR #%d", prNumber)
+				slog.Info("Successfully auto-merged PR", "pr_number", prNumber)
 			}
 		}
 	}
@@ -319,20 +319,20 @@ func generateBody(ctx context.Context, client *github.Client, app *Application, 
 				prNumbers := []int{}
 				cmp, _, err := client.Repositories.CompareCommits(ctx, app.SourceOwner, app.SourceName, oldVersion, version, nil)
 				if err != nil {
-					log.Printf("Error compare commits: %s", err)
+					slog.Error("Error comparing commits", "error", err)
 					continue
 				}
 				for _, commit := range cmp.Commits {
 					if commit.Commit.Message != nil {
 						m, err := mergeCommitRegex.FindStringMatch(*commit.Commit.Message)
 						if err != nil {
-							log.Printf("Error find string match: %s", err)
+							slog.Error("Error finding string match", "error", err)
 							continue
 						}
 						if m != nil {
 							number, err := strconv.Atoi(m.GroupByName("number").String())
 							if err != nil {
-								log.Printf("Error converting number string: %s", err)
+								slog.Error("Error converting number string", "error", err)
 								continue
 							}
 							prNumbers = append(prNumbers, number)
@@ -342,7 +342,7 @@ func generateBody(ctx context.Context, client *github.Client, app *Application, 
 				for _, number := range prNumbers {
 					pr, _, err := client.PullRequests.Get(ctx, app.SourceOwner, app.SourceName, number)
 					if err != nil {
-						log.Printf("Error get pull request: %s", err)
+						slog.Error("Error getting pull request", "error", err)
 						continue
 					}
 					body += fmt.Sprintf("- %s by @%s in %s/%s#%d\n", *pr.Title, *pr.User.Login, app.SourceOwner, app.SourceName, *pr.Number)

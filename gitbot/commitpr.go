@@ -2,7 +2,7 @@ package gitbot
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/dlclark/regexp2"
@@ -33,7 +33,7 @@ func (r *release) makeChange(ctx context.Context, client *github.Client, filePat
 
 	content, err := r.getOriginalContent(ctx, client, filePath, r.repo.BaseBranch)
 	if err != nil {
-		log.Printf("Error fetching content %s", err)
+		slog.Error("Error fetching content", "error", err)
 		return
 	}
 
@@ -88,7 +88,7 @@ func (r *release) createPR(ctx context.Context, client *github.Client) (*string,
 
 	err = r.addLabels(ctx, client, *pr.Number)
 	if err != nil {
-		log.Printf("Error Adding Lables: %s", err)
+		slog.Error("Error adding labels", "error", err)
 	}
 
 	return github.String(pr.GetHTMLURL()), nil
