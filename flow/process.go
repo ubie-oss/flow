@@ -47,16 +47,20 @@ func (f *Flow) processImage(ctx context.Context, image, version string) error {
 	return nil
 }
 
-func (f *Flow) getGitbotClient(ctx context.Context) *github.Client {
+func (f *Flow) getGitbotClient(ctx context.Context) (*github.Client, error) {
 	if f.useApp {
 		return gitbot.NewGitHubClientWithApp(ctx, *f.githubAppID, *f.githubAppInstlationID, *f.githubAppPrivateKey)
 	}
-	return gitbot.NewGitHubClient(ctx, *f.githubToken)
+	return gitbot.NewGitHubClient(ctx, *f.githubToken), nil
 }
 
 func (f *Flow) process(ctx context.Context, app *Application, version string) PullRequests {
 	var prs PullRequests
-	client := f.getGitbotClient(ctx)
+	client, err := f.getGitbotClient(ctx)
+	if err != nil {
+		slog.Error("Failed to create GitHub client", "error", err)
+		return prs
+	}
 
 	for _, manifest := range app.Manifests {
 		if !shouldProcess(manifest, version) {

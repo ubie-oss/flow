@@ -2,8 +2,7 @@ package gitbot
 
 import (
 	"context"
-	"log/slog"
-	"os"
+	"fmt"
 	"net/http"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
@@ -18,12 +17,11 @@ func NewGitHubClient(ctx context.Context, token string) *github.Client {
 	return github.NewClient(tc)
 }
 
-func NewGitHubClientWithApp(ctx context.Context, appID, installationID int64, privateKey string) *github.Client {
+func NewGitHubClientWithApp(ctx context.Context, appID, installationID int64, privateKey string) (*github.Client, error) {
 	tr := http.DefaultTransport
 	itr, err := ghinstallation.New(tr, appID, installationID, []byte(privateKey))
 	if err != nil {
-		slog.Error("Failed to create GitHub installation transport", "error", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to create GitHub installation transport: %w", err)
 	}
-	return github.NewClient(&http.Client{Transport: itr})
+	return github.NewClient(&http.Client{Transport: itr}), nil
 }
