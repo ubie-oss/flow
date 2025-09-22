@@ -43,7 +43,7 @@ func main() {
 
 	cfg, err := getConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Cloud not read the file:%s.\n", err)
+		fmt.Fprintf(os.Stderr, "Could not read the file:%s.\n", err)
 		os.Exit(1)
 	}
 
@@ -77,8 +77,7 @@ func getConfig() ([]byte, error) {
 func initFlow(config []byte) (*flow.Flow, error) {
 	cfg := new(flow.Config)
 	if err := yaml.Unmarshal(config, cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "yaml.Unmarshal error:%v.\n", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("yaml.Unmarshal error: %w", err)
 	}
 	f, err := flow.New(cfg)
 	if err != nil {
@@ -89,7 +88,7 @@ func initFlow(config []byte) (*flow.Flow, error) {
 }
 
 func handlePubSubMessage(w http.ResponseWriter, r *http.Request) {
-	ctx := context.TODO()
+	ctx := r.Context()
 
 	var m PubSubMessage
 	body, err := io.ReadAll(r.Body)
