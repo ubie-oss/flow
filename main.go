@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -37,6 +37,10 @@ var (
 )
 
 func main() {
+	// Configure slog with JSON handler
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	cfg, err := getConfig()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Cloud not read the file:%s.\n", err)
@@ -59,7 +63,11 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	slog.Info("Starting server", "port", port)
+	if err := http.ListenAndServe(":"+port, r); err != nil {
+		slog.Error("Failed to start server", "error", err)
+		os.Exit(1)
+	}
 }
 
 func getConfig() ([]byte, error) {
@@ -86,27 +94,27 @@ func handlePubSubMessage(w http.ResponseWriter, r *http.Request) {
 	var m PubSubMessage
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("iotuil.ReadAll: %v", err)
+		slog.Error("Failed to read request body", "error", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
 	if err := json.Unmarshal(body, &m); err != nil {
-		log.Printf("json.Unmarshal: %v", err)
+		slog.Error("Failed to unmarshal PubSub message", "error", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
 	event, err := gcrevent.ParseMessage(m.Message.Data)
 	if err != nil {
-		log.Printf("gcrevent.ParseMessage: %v", err)
+		slog.Error("Failed to parse GCR event", "error", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
 	err = f.ProcessGCREvent(ctx, event)
 	if err != nil {
-		log.Printf("faild to process: %s", err)
+		slog.Error("Failed to process GCR event", "error", err)
 	}
 
 	res := &Response{
