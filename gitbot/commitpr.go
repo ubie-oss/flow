@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/dlclark/regexp2"
-	"github.com/google/go-github/v61/github"
+	"github.com/google/go-github/v75/github"
 )
 
 func (r *release) getRef(ctx context.Context, client *github.Client) (ref *github.Reference, err error) {

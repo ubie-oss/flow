@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/go-github/v61/github"
+	"github.com/google/go-github/v75/github"
 
 	"golang.org/x/oauth2"
 )
