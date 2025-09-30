@@ -18,7 +18,7 @@ func (r *release) getRef(ctx context.Context, client *github.Client) (ref *githu
 	if baseRef, _, err = client.Git.GetRef(ctx, r.repo.SourceOwner, r.repo.SourceRepo, "refs/heads/"+r.repo.BaseBranch); err != nil {
 		return nil, err
 	}
-	newRef := &github.Reference{Ref: github.String("refs/heads/" + r.repo.CommitBranch), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
+	newRef := github.CreateRef{Ref: "refs/heads/" + r.repo.CommitBranch, SHA: *baseRef.Object.SHA}
 	ref, _, err = client.Git.CreateRef(ctx, r.repo.SourceOwner, r.repo.SourceRepo, newRef)
 	return ref, err
 }
@@ -62,13 +62,14 @@ func (r *release) pushCommit(ctx context.Context, client *github.Client, ref *gi
 	date := time.Now()
 	author := &github.CommitAuthor{Date: &github.Timestamp{date}, Name: &r.author.Name, Email: &r.author.Email}
 	commit := &github.Commit{Author: author, Message: &r.message, Tree: tree, Parents: []*github.Commit{parent.Commit}}
-	newCommit, _, err := client.Git.CreateCommit(ctx, r.repo.SourceOwner, r.repo.SourceRepo, commit, nil)
+	newCommit, _, err := client.Git.CreateCommit(ctx, r.repo.SourceOwner, r.repo.SourceRepo, *commit, nil)
 	if err != nil {
 		return err
 	}
 
 	ref.Object.SHA = newCommit.SHA
-	_, _, err = client.Git.UpdateRef(ctx, r.repo.SourceOwner, r.repo.SourceRepo, ref, false)
+	updateRef := github.UpdateRef{SHA: *newCommit.SHA, Force: github.Bool(false)}
+	_, _, err = client.Git.UpdateRef(ctx, r.repo.SourceOwner, r.repo.SourceRepo, *ref.Ref, updateRef)
 	return err
 }
 
