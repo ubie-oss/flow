@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/dlclark/regexp2"
-	"github.com/google/go-github/v61/github"
+	"github.com/google/go-github/v75/github"
 )
 
 func (r *release) getRef(ctx context.Context, client *github.Client) (ref *github.Reference, err error) {
@@ -18,7 +18,7 @@ func (r *release) getRef(ctx context.Context, client *github.Client) (ref *githu
 	if baseRef, _, err = client.Git.GetRef(ctx, r.repo.SourceOwner, r.repo.SourceRepo, "refs/heads/"+r.repo.BaseBranch); err != nil {
 		return nil, err
 	}
-	newRef := &github.Reference{Ref: github.String("refs/heads/" + r.repo.CommitBranch), Object: &github.GitObject{SHA: baseRef.Object.SHA}}
+	newRef := github.CreateRef{Ref: "refs/heads/" + r.repo.CommitBranch, SHA: *baseRef.Object.SHA}
 	ref, _, err = client.Git.CreateRef(ctx, r.repo.SourceOwner, r.repo.SourceRepo, newRef)
 	return ref, err
 }
@@ -44,7 +44,7 @@ func (r *release) makeChange(ctx context.Context, client *github.Client, filePat
 func (r *release) getTree(ctx context.Context, client *github.Client, ref *github.Reference) (*github.Tree, error) {
 	entries := []*github.TreeEntry{}
 	for path, content := range r.changedContentMap {
-		entries = append(entries, &github.TreeEntry{Path: github.String(path), Type: github.String("blob"), Content: github.String(content), Mode: github.String("100644")})
+		entries = append(entries, &github.TreeEntry{Path: github.Ptr(path), Type: github.Ptr("blob"), Content: github.Ptr(content), Mode: github.Ptr("100644")})
 	}
 
 	tree, _, err := client.Git.CreateTree(ctx, r.repo.SourceOwner, r.repo.SourceRepo, *ref.Object.SHA, entries)
@@ -60,25 +60,26 @@ func (r *release) pushCommit(ctx context.Context, client *github.Client, ref *gi
 	parent.Commit.SHA = parent.SHA
 
 	date := time.Now()
-	author := &github.CommitAuthor{Date: &github.Timestamp{date}, Name: &r.author.Name, Email: &r.author.Email}
+	author := &github.CommitAuthor{Date: &github.Timestamp{Time: date}, Name: &r.author.Name, Email: &r.author.Email}
 	commit := &github.Commit{Author: author, Message: &r.message, Tree: tree, Parents: []*github.Commit{parent.Commit}}
-	newCommit, _, err := client.Git.CreateCommit(ctx, r.repo.SourceOwner, r.repo.SourceRepo, commit, nil)
+	newCommit, _, err := client.Git.CreateCommit(ctx, r.repo.SourceOwner, r.repo.SourceRepo, *commit, nil)
 	if err != nil {
 		return err
 	}
 
 	ref.Object.SHA = newCommit.SHA
-	_, _, err = client.Git.UpdateRef(ctx, r.repo.SourceOwner, r.repo.SourceRepo, ref, false)
+	updateRef := github.UpdateRef{SHA: *newCommit.SHA, Force: github.Ptr(false)}
+	_, _, err = client.Git.UpdateRef(ctx, r.repo.SourceOwner, r.repo.SourceRepo, *ref.Ref, updateRef)
 	return err
 }
 
 func (r *release) createPR(ctx context.Context, client *github.Client) (*string, error) {
 	newPR := &github.NewPullRequest{
-		Title:               github.String(r.message),
-		Head:                github.String(r.repo.CommitBranch),
-		Base:                github.String(r.repo.BaseBranch),
-		Body:                github.String(r.body),
-		MaintainerCanModify: github.Bool(true),
+		Title:               github.Ptr(r.message),
+		Head:                github.Ptr(r.repo.CommitBranch),
+		Base:                github.Ptr(r.repo.BaseBranch),
+		Body:                github.Ptr(r.body),
+		MaintainerCanModify: github.Ptr(true),
 	}
 
 	pr, _, err := client.PullRequests.Create(ctx, r.repo.SourceOwner, r.repo.SourceRepo, newPR)
@@ -91,7 +92,7 @@ func (r *release) createPR(ctx context.Context, client *github.Client) (*string,
 		slog.Error("Error adding labels", "error", err)
 	}
 
-	return github.String(pr.GetHTMLURL()), nil
+	return github.Ptr(pr.GetHTMLURL()), nil
 }
 
 func (r *release) addLabels(ctx context.Context, client *github.Client, prNumber int) error {

@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/dlclark/regexp2"
-	"github.com/google/go-github/v61/github"
+	"github.com/google/go-github/v75/github"
 )
 
 type release struct {
