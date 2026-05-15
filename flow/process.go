@@ -114,8 +114,9 @@ func (f *Flow) processAttempt(ctx context.Context, client *github.Client, app *A
 	for oldVersion := range oldVersionSet {
 		oldVersions = append(oldVersions, oldVersion)
 	}
-	body := generateBody(ctx, client, app, manifest, version, oldVersions)
+	body, assignees := generateBody(ctx, client, app, manifest, version, oldVersions)
 	release.SetBody(body)
+	release.SetAssignees(assignees)
 
 	err := release.Commit(ctx, client)
 	if err != nil {
@@ -307,8 +308,10 @@ func getApplicationByImage(image string) (*Application, error) {
 	return nil, errors.New("No application found for image " + image)
 }
 
-func generateBody(ctx context.Context, client *github.Client, app *Application, manifest Manifest, version string, oldVersions []string) string {
+func generateBody(ctx context.Context, client *github.Client, app *Application, manifest Manifest, version string, oldVersions []string) (string, []string) {
 	var body string
+	assigneeSet := map[string]struct{}{}
+	var assignees []string
 
 	if !manifest.HideSourceReleaseDesc {
 		body += "# Release\n"
@@ -350,6 +353,17 @@ func generateBody(ctx context.Context, client *github.Client, app *Application, 
 						continue
 					}
 					body += fmt.Sprintf("- %s by @%s in %s/%s#%d\n", *pr.Title, *pr.User.Login, app.SourceOwner, app.SourceName, *pr.Number)
+					for _, a := range pr.Assignees {
+						if a == nil || a.Login == nil {
+							continue
+						}
+						login := *a.Login
+						if _, ok := assigneeSet[login]; ok {
+							continue
+						}
+						assigneeSet[login] = struct{}{}
+						assignees = append(assignees, login)
+					}
 				}
 				body += "\n"
 			}
@@ -361,5 +375,5 @@ func generateBody(ctx context.Context, client *github.Client, app *Application, 
 		body += fmt.Sprintf("\n---\n%s", manifest.PRBody)
 	}
 
-	return body
+	return body, assignees
 }

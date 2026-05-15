@@ -14,6 +14,7 @@ type release struct {
 	message           string
 	body              string
 	labels            []string
+	assignees         []string
 	changedContentMap map[string]string
 }
 
@@ -33,6 +34,8 @@ type Release interface {
 	SetBody(string)
 	GetLabels() []string
 	SetLabels([]string)
+	GetAssignees() []string
+	SetAssignees([]string)
 }
 
 type Repo struct {
@@ -89,13 +92,15 @@ func (r *release) CreatePR(ctx context.Context, client *github.Client) (*string,
 	return r.createPR(ctx, client)
 }
 
-func (r *release) GetRepo() *Repo            { return &r.repo }
-func (r *release) SetRepo(repo Repo)         { r.repo = repo }
-func (r *release) GetAuthor() *Author        { return &r.author }
-func (r *release) SetAuthor(author Author)   { r.author = author }
-func (r *release) GetMessage() string        { return r.message }
-func (r *release) SetMessage(s string)       { r.message = s }
-func (r *release) GetBody() string           { return r.body }
-func (r *release) SetBody(s string)          { r.body = s }
-func (r *release) GetLabels() []string       { return r.labels }
-func (r *release) SetLabels(labels []string) { r.labels = labels }
+func (r *release) GetRepo() *Repo                  { return &r.repo }
+func (r *release) SetRepo(repo Repo)               { r.repo = repo }
+func (r *release) GetAuthor() *Author              { return &r.author }
+func (r *release) SetAuthor(author Author)         { r.author = author }
+func (r *release) GetMessage() string              { return r.message }
+func (r *release) SetMessage(s string)             { r.message = s }
+func (r *release) GetBody() string                 { return r.body }
+func (r *release) SetBody(s string)                { r.body = s }
+func (r *release) GetLabels() []string             { return r.labels }
+func (r *release) SetLabels(labels []string)       { r.labels = labels }
+func (r *release) GetAssignees() []string          { return r.assignees }
+func (r *release) SetAssignees(assignees []string) { r.assignees = assignees }
