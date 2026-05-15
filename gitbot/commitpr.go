@@ -92,11 +92,23 @@ func (r *release) createPR(ctx context.Context, client *github.Client) (*string,
 		slog.Error("Error adding labels", "error", err)
 	}
 
+	if err := r.addAssignees(ctx, client, *pr.Number); err != nil {
+		slog.Error("Error adding assignees", "error", err)
+	}
+
 	return github.Ptr(pr.GetHTMLURL()), nil
 }
 
 func (r *release) addLabels(ctx context.Context, client *github.Client, prNumber int) error {
 	_, _, err := client.Issues.AddLabelsToIssue(ctx, r.repo.SourceOwner, r.repo.SourceRepo, prNumber, r.labels)
+	return err
+}
+
+func (r *release) addAssignees(ctx context.Context, client *github.Client, prNumber int) error {
+	if len(r.assignees) == 0 {
+		return nil
+	}
+	_, _, err := client.Issues.AddAssignees(ctx, r.repo.SourceOwner, r.repo.SourceRepo, prNumber, r.assignees)
 	return err
 }
 
