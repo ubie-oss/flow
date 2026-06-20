@@ -3,7 +3,7 @@ module github.com/ubie-oss/flow/v4
 require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.17.0
 	github.com/dlclark/regexp2 v1.11.5
-	github.com/go-chi/chi/v5 v5.2.3
+	github.com/go-chi/chi/v5 v5.2.4
 	github.com/go-chi/render v1.0.3
 	github.com/google/go-github/v75 v75.0.0
 	github.com/sakajunquality/cloud-pubsub-events v0.0.1
