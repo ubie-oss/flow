@@ -117,6 +117,9 @@ func (f *Flow) processAttempt(ctx context.Context, client *github.Client, app *A
 	body, assignees := generateBody(ctx, client, app, manifest, version, oldVersions)
 	release.SetBody(body)
 	release.SetAssignees(assignees)
+	// Best-effort: propagate clouddeploy-auto-approve from source Release body marker.
+	// Failures must not block image rewrite / commit / PR creation.
+	release.SetLabels(maybePropagateAutoApproveLabel(ctx, client, app.SourceOwner, app.SourceName, version, release.GetLabels()))
 
 	err := release.Commit(ctx, client)
 	if err != nil {
