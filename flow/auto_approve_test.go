@@ -14,27 +14,36 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestContainsAutoApproveMarker(t *testing.T) {
+func TestDetectAutoApproveMarker(t *testing.T) {
 	tests := []struct {
 		name string
 		body string
-		want bool
+		want autoApproveKind
 	}{
-		{name: "exact marker only", body: autoApproveMarker, want: true},
-		{name: "marker at end of body", body: "Release notes\n\n" + autoApproveMarker + "\n", want: true},
-		{name: "marker in middle", body: "before\n" + autoApproveMarker + "\nafter", want: true},
-		{name: "empty body", body: "", want: false},
-		{name: "partial without html comment", body: "ubie:auto-approve", want: false},
-		{name: "similar wrong marker", body: "<!-- ubie:auto-approve-all -->", want: false},
-		{name: "missing closing", body: "<!-- ubie:auto-approve", want: false},
-		{name: "different marker", body: "<!-- auto-approve -->", want: false},
-		{name: "unrelated body", body: "normal release notes", want: false},
+		{name: "exact normal marker only", body: autoApproveMarker, want: autoApproveNormal},
+		{name: "exact wait marker only", body: autoApproveWaitForE2EMarker, want: autoApproveWaitForE2E},
+		{name: "normal marker at end of body", body: "Release notes\n\n" + autoApproveMarker + "\n", want: autoApproveNormal},
+		{name: "wait marker at end of body", body: "Release notes\n\n" + autoApproveWaitForE2EMarker + "\n", want: autoApproveWaitForE2E},
+		{name: "both markers prefers wait", body: autoApproveMarker + "\n" + autoApproveWaitForE2EMarker, want: autoApproveWaitForE2E},
+		{name: "both markers reverse order prefers wait", body: autoApproveWaitForE2EMarker + "\n" + autoApproveMarker, want: autoApproveWaitForE2E},
+		{name: "empty body", body: "", want: autoApproveNone},
+		{name: "partial without html comment", body: "ubie:auto-approve", want: autoApproveNone},
+		{name: "similar wrong marker", body: "<!-- ubie:auto-approve-all -->", want: autoApproveNone},
+		{name: "missing closing", body: "<!-- ubie:auto-approve", want: autoApproveNone},
+		{name: "different marker", body: "<!-- auto-approve -->", want: autoApproveNone},
+		{name: "unrelated body", body: "normal release notes", want: autoApproveNone},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.want, containsAutoApproveMarker(tc.body))
+			assert.Equal(t, tc.want, detectAutoApproveMarker(tc.body))
 		})
 	}
+}
+
+func TestContainsAutoApproveMarker(t *testing.T) {
+	assert.True(t, containsAutoApproveMarker(autoApproveMarker))
+	assert.False(t, containsAutoApproveMarker(autoApproveWaitForE2EMarker))
+	assert.False(t, containsAutoApproveMarker(""))
 }
 
 func TestMaybePropagateAutoApproveLabel(t *testing.T) {
@@ -52,10 +61,22 @@ func TestMaybePropagateAutoApproveLabel(t *testing.T) {
 		wantLabels []string
 	}{
 		{
-			name:       "marker present adds label",
+			name:       "normal marker present adds normal label",
 			status:     http.StatusOK,
 			body:       github.Ptr("notes\n" + autoApproveMarker + "\n"),
 			wantLabels: []string{"alice", "production", cloudDeployAutoApproveLabel},
+		},
+		{
+			name:       "wait marker present adds wait label only",
+			status:     http.StatusOK,
+			body:       github.Ptr("notes\n" + autoApproveWaitForE2EMarker + "\n"),
+			wantLabels: []string{"alice", "production", cloudDeployAutoApproveWaitForE2ELabel},
+		},
+		{
+			name:       "both markers prefers wait label only",
+			status:     http.StatusOK,
+			body:       github.Ptr(autoApproveMarker + "\n" + autoApproveWaitForE2EMarker),
+			wantLabels: []string{"alice", "production", cloudDeployAutoApproveWaitForE2ELabel},
 		},
 		{
 			name:       "marker absent keeps labels",
